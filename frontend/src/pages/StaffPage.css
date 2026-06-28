@@ -1,0 +1,237 @@
+.staff-page {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.82), rgba(243, 255, 247, 0.75));
+}
+
+.staff-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding: 6px 4px 14px;
+  border-bottom: 1px dashed rgba(18, 35, 34, 0.2);
+}
+
+.staff-hero h2 {
+  margin: 0;
+  font-size: 34px;
+}
+
+.staff-hero p {
+  margin: 8px 0 0;
+  opacity: 0.8;
+}
+
+.staff-quick-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.staff-link-pill {
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(130deg, #1d7471, #0f5f5c);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+}
+
+.staff-link-pill:hover {
+  filter: brightness(1.06);
+}
+
+.staff-message {
+  margin-top: 14px;
+}
+
+.staff-action-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.staff-booking-board {
+  margin-top: 14px;
+}
+
+.staff-heatmap-wrap {
+  margin-top: 10px;
+}
+
+.staff-heatmap-table {
+  min-width: 920px;
+}
+
+.staff-heatmap-table td.heatmap-cell.booked {
+  cursor: pointer;
+}
+
+.staff-heatmap-table td.heatmap-cell.booked.is-selected {
+  box-shadow: inset 0 0 0 2px rgba(29, 116, 113, 0.85);
+}
+
+.booking-deposit-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: #ffe7cc;
+  color: #9a4d00;
+}
+
+.staff-action-card {
+  border-radius: 18px;
+  border: 1px solid rgba(18, 35, 34, 0.14);
+  background: rgba(255, 255, 255, 0.86);
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.staff-action-card--wide {
+  grid-column: 1 / -1;
+}
+
+.staff-action-card h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.staff-action-card p {
+  margin: 0;
+  opacity: 0.75;
+  font-size: 13px;
+}
+
+.staff-form {
+  display: grid;
+  gap: 10px;
+}
+
+.staff-form select {
+  border: 1px solid rgba(18, 35, 34, 0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  width: 100%;
+}
+
+.staff-form--grid {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  align-items: start;
+}
+
+.staff-form-full {
+  grid-column: 1 / -1;
+}
+
+.staff-deposit-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.staff-deposit-toggle input {
+  width: auto;
+}
+
+.staff-deposit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.staff-booking-select {
+  display: grid;
+  gap: 8px;
+}
+
+.staff-booking-select span {
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgba(18, 35, 34, 0.82);
+  letter-spacing: 0.04em;
+}
+
+.staff-booking-select select {
+  border: 1px solid rgba(18, 35, 34, 0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  width: 100%;
+}
+
+.staff-deposit-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.staff-deposit-current {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(18, 35, 34, 0.88);
+}
+
+.staff-deposit-grid input,
+.staff-deposit-grid select {
+  border: 1px solid rgba(18, 35, 34, 0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  width: 100%;
+}
+
+.staff-footer-actions {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.staff-link-secondary {
+  text-decoration: none;
+  color: #122322;
+  border: 1px solid rgba(18, 35, 34, 0.22);
+  background: rgba(255, 255, 255, 0.75);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.staff-link-secondary:hover {
+  background: rgba(185, 255, 111, 0.35);
+}
+
+@media (max-width: 760px) {
+  .staff-form--grid {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-deposit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-form-full {
+    grid-column: auto;
+  }
+
+  .staff-action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-hero h2 {
+    font-size: 30px;
+  }
+}

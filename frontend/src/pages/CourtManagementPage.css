@@ -1,0 +1,109 @@
+.court-management-page {
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.86), rgba(248, 255, 252, 0.78));
+}
+
+.court-management-header {
+  align-items: center;
+}
+
+.court-back-link {
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(120deg, #1d7471, #0f5f5c);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.court-back-link:hover {
+  filter: brightness(1.07);
+}
+
+.court-form {
+  display: grid;
+  gap: 10px;
+}
+
+.court-field {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.court-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.court-check input {
+  width: 16px;
+  height: 16px;
+}
+
+.court-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.court-cancel-btn {
+  background: #d8d8d8;
+  color: #1a1a1a;
+}
+
+.court-table-card {
+  grid-column: 1 / -1;
+}
+
+.court-table-wrap {
+  overflow-x: auto;
+}
+
+.court-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.court-table thead tr {
+  border-bottom: 2px solid rgba(18, 35, 34, 0.18);
+}
+
+.court-table th,
+.court-table td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(18, 35, 34, 0.08);
+}
+
+.court-state.active {
+  color: #2f9e44;
+  font-weight: 700;
+}
+
+.court-state.maintenance {
+  color: #d9480f;
+  font-weight: 700;
+}
+
+.court-state.stopped {
+  color: #868e96;
+}
+
+.court-edit-btn {
+  background: #4c6ef5;
+  color: #fff;
+  padding: 8px 12px;
+}
+
+@media (max-width: 760px) {
+  .court-actions {
+    flex-direction: column;
+  }
+
+  .court-actions button {
+    width: 100%;
+  }
+}

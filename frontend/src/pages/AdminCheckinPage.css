@@ -1,0 +1,163 @@
+.admin-checkin-page {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.86), rgba(234, 251, 247, 0.78));
+}
+
+.admin-checkin-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 4px 2px 14px;
+  border-bottom: 1px dashed rgba(18, 35, 34, 0.2);
+}
+
+.admin-checkin-hero h2 {
+  margin: 0;
+  font-size: 34px;
+}
+
+.admin-checkin-hero p {
+  margin: 8px 0 0;
+  opacity: 0.8;
+}
+
+.admin-checkin-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-checkin-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 14px;
+}
+
+.admin-checkin-card {
+  border-radius: 18px;
+  border: 1px solid rgba(18, 35, 34, 0.14);
+  background: rgba(255, 255, 255, 0.88);
+  padding: 16px;
+}
+
+.admin-checkin-card h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.admin-checkin-card p {
+  margin: 8px 0 0;
+  opacity: 0.82;
+}
+
+.admin-checkin-card--wide {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-checkin-form {
+  margin-top: 4px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.admin-checkin-form input {
+  border: 1px solid rgba(18, 35, 34, 0.2);
+  border-radius: 12px;
+  padding: 11px 13px;
+}
+
+.admin-checkin-form button {
+  border-radius: 12px;
+  font-weight: 700;
+  min-width: 140px;
+}
+
+.admin-checkin-highlight {
+  margin-top: 6px;
+  border: 1px solid rgba(18, 35, 34, 0.16);
+  border-radius: 14px;
+  background: rgba(29, 116, 113, 0.08);
+  padding: 12px;
+}
+
+.admin-checkin-highlight p {
+  margin: 6px 0 0;
+  opacity: 1;
+}
+
+.admin-checkin-metrics {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.admin-checkin-metrics div {
+  border: 1px solid rgba(18, 35, 34, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.admin-checkin-metrics span {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.admin-checkin-metrics strong {
+  font-size: 22px;
+}
+
+.admin-checkin-card--feed {
+  margin-top: 14px;
+}
+
+.admin-checkin-feed {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.admin-checkin-feed-item {
+  border-radius: 12px;
+  border: 1px solid rgba(18, 35, 34, 0.12);
+  background: #fff;
+  padding: 10px 12px;
+}
+
+.admin-checkin-feed-title {
+  font-weight: 700;
+}
+
+.admin-checkin-feed-sub {
+  margin-top: 3px;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+@media (max-width: 960px) {
+  .admin-checkin-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-checkin-hero h2 {
+    font-size: 30px;
+  }
+
+  .admin-checkin-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-checkin-form button {
+    width: 100%;
+  }
+}

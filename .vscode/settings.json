@@ -1,0 +1,11 @@
+{
+  "sqltools.connections": [
+    {
+      "name": "Badminton Local",
+      "driver": "SQLite",
+      "database": "C:/temp/bcm/badminton_dev.db",
+      "previewLimit": 50
+    }
+  ],
+  "sqltools.useNodeRuntime": true
+}
