@@ -5,8 +5,20 @@ Push-Location "$root\backend"
 try {
   $goFiles = Get-ChildItem -Recurse -Filter '*.go' -File
   if ($goFiles.Count -gt 0) {
-    gofmt -w $goFiles.FullName
-    if ($LASTEXITCODE -ne 0) { throw 'gofmt failed.' }
+    $unformatted = @(gofmt -l $goFiles.FullName)
+
+    if ($LASTEXITCODE -ne 0) {
+      throw 'gofmt check failed.'
+    }
+
+    if ($unformatted.Count -gt 0) {
+      Write-Host 'The following Go files require gofmt:' -ForegroundColor Yellow
+      $unformatted | ForEach-Object {
+        Write-Host "  $_" -ForegroundColor Yellow
+      }
+
+      throw 'Go formatting check failed.'
+    }
   }
   go test ./...
   if ($LASTEXITCODE -ne 0) { throw 'go test failed.' }
