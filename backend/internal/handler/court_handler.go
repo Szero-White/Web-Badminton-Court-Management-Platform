@@ -6,14 +6,13 @@ import (
 	"time"
 
 	"badminton-platform/backend/internal/service"
+	"badminton-platform/backend/internal/timeutil"
 	"badminton-platform/backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
 
-type CourtHandler struct {
-	courts *service.CourtService
-}
+type CourtHandler struct{ courts *service.CourtService }
 
 func NewCourtHandler(courts *service.CourtService) *CourtHandler {
 	return &CourtHandler{courts: courts}
@@ -49,7 +48,6 @@ func (h *CourtHandler) ListCourts(c *gin.Context) {
 	}
 	response.JSON(c, http.StatusOK, courts)
 }
-
 func (h *CourtHandler) ListAllCourts(c *gin.Context) {
 	courts, err := h.courts.ListAllCourts()
 	if err != nil {
@@ -80,17 +78,7 @@ func (h *CourtHandler) UpdateCourt(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", err.Error())
 		return
 	}
-	
-	isActive := true
-	isMaintenance := false
-	if req.IsActive != nil {
-		isActive = *req.IsActive
-	}
-	if req.IsMaintenance != nil {
-		isMaintenance = *req.IsMaintenance
-	}
-	
-	court, err := h.courts.UpdateCourt(uint(courtID), req.Name, req.CourtType, req.OpenTime, req.CloseTime, req.BasePrice, isActive, isMaintenance)
+	court, err := h.courts.UpdateCourt(uint(courtID), req.Name, req.CourtType, req.OpenTime, req.CloseTime, req.BasePrice, req.IsActive, req.IsMaintenance)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "UPDATE_COURT_FAILED", err.Error())
 		return
@@ -99,14 +87,8 @@ func (h *CourtHandler) UpdateCourt(c *gin.Context) {
 }
 
 func (h *CourtHandler) AvailableSlots(c *gin.Context) {
-	dayStr := c.Query("day")
-	if dayStr == "" {
-		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", "day is required (YYYY-MM-DD)")
-		return
-	}
-	day, err := time.Parse("2006-01-02", dayStr)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", "invalid day format")
+	day, ok := h.ensureSlotsForRequestedDay(c)
+	if !ok {
 		return
 	}
 	slots, err := h.courts.AvailableSlots(day)
@@ -117,32 +99,57 @@ func (h *CourtHandler) AvailableSlots(c *gin.Context) {
 	response.JSON(c, http.StatusOK, slots)
 }
 
-func (h *CourtHandler) DaySlots(c *gin.Context) {
-	dayStr := c.Query("day")
-	if dayStr == "" {
-		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", "day is required (YYYY-MM-DD)")
+func (h *CourtHandler) PublicDaySlots(c *gin.Context) {
+	day, ok := h.ensureSlotsForRequestedDay(c)
+	if !ok {
 		return
 	}
-	day, err := time.Parse("2006-01-02", dayStr)
+	slots, err := h.courts.PublicDaySlots(day)
 	if err != nil {
-		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", "invalid day format")
+		response.Error(c, http.StatusInternalServerError, "LIST_DAY_SLOTS_FAILED", err.Error())
 		return
 	}
+	response.JSON(c, http.StatusOK, slots)
+}
 
-	today := time.Now()
-	todayStart := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
-	dayStart := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, day.Location())
-	if !dayStart.Before(todayStart) {
-		if err := h.courts.EnsureDaySlots(dayStart, 30, 17, 21, 1.2); err != nil {
-			response.Error(c, http.StatusInternalServerError, "ENSURE_DAY_SLOTS_FAILED", err.Error())
-			return
-		}
+func (h *CourtHandler) DaySlots(c *gin.Context) {
+	day, ok := h.ensureSlotsForRequestedDay(c)
+	if !ok {
+		return
 	}
-
 	slots, err := h.courts.DaySlots(day)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, "LIST_DAY_SLOTS_FAILED", err.Error())
 		return
 	}
 	response.JSON(c, http.StatusOK, slots)
+}
+
+func (h *CourtHandler) ensureSlotsForRequestedDay(c *gin.Context) (time.Time, bool) {
+	day, ok := parseDayQuery(c)
+	if !ok {
+		return time.Time{}, false
+	}
+	dayStart := timeutil.StartOfDay(day)
+	if !dayStart.Before(timeutil.StartOfDay(timeutil.Now())) {
+		if err := h.courts.EnsureDaySlots(dayStart, 30, 17, 21, 1.2); err != nil {
+			response.Error(c, http.StatusInternalServerError, "ENSURE_DAY_SLOTS_FAILED", err.Error())
+			return time.Time{}, false
+		}
+	}
+	return dayStart, true
+}
+
+func parseDayQuery(c *gin.Context) (day time.Time, ok bool) {
+	dayStr := c.Query("day")
+	if dayStr == "" {
+		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", "day is required (YYYY-MM-DD)")
+		return time.Time{}, false
+	}
+	day, err := timeutil.ParseDate(dayStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", "invalid day format")
+		return time.Time{}, false
+	}
+	return day, true
 }

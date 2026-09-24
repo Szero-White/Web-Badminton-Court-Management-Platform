@@ -1,13 +1,15 @@
 FROM golang:1.23-alpine AS builder
-WORKDIR /app
-COPY go.mod go.sum* ./
+WORKDIR /src
+RUN apk add --no-cache build-base
+COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/api
+RUN CGO_ENABLED=1 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/bcm-api ./cmd/api
 
 FROM alpine:3.20
+RUN apk add --no-cache ca-certificates tzdata && addgroup -S app && adduser -S -G app app
 WORKDIR /app
-COPY --from=builder /app/server /app/server
-COPY --from=builder /app/migrations /app/migrations
+COPY --from=builder /out/bcm-api /app/bcm-api
+USER app
 EXPOSE 8080
-CMD ["/app/server"]
+ENTRYPOINT ["/app/bcm-api"]

@@ -2,9 +2,9 @@ package handler
 
 import (
 	"net/http"
-	"time"
 
 	"badminton-platform/backend/internal/service"
+	"badminton-platform/backend/internal/timeutil"
 	"badminton-platform/backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +19,7 @@ func NewDashboardHandler(dashboard *service.DashboardService) *DashboardHandler 
 }
 
 func (h *DashboardHandler) Summary(c *gin.Context) {
-	summary, err := h.dashboard.Summary(time.Now())
+	summary, err := h.dashboard.Summary(timeutil.Now())
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, "DASHBOARD_FAILED", err.Error())
 		return

@@ -1,6 +1,6 @@
 DROP TABLE IF EXISTS audit_logs;
-DROP TABLE IF EXISTS memberships;
-DROP TABLE IF EXISTS promotions;
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS beverages;
 DROP TABLE IF EXISTS payments;
 DROP TABLE IF EXISTS bookings;
 DROP TABLE IF EXISTS time_slots;

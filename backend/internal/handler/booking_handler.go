@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
-	"time"
 
 	"badminton-platform/backend/internal/middleware"
+	"badminton-platform/backend/internal/models"
 	"badminton-platform/backend/internal/service"
+	"badminton-platform/backend/internal/timeutil"
 	"badminton-platform/backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -26,12 +28,12 @@ type createPendingRequest struct {
 
 type createPendingForCustomerRequest struct {
 	TimeSlotID      uint   `json:"time_slot_id"`
-	StartTimeSlotID  uint   `json:"start_time_slot_id"`
-	EndTimeSlotID    uint   `json:"end_time_slot_id"`
-	CustomerPhone    string `json:"customer_phone" binding:"required"`
-	CustomerName     string `json:"customer_name"`
-	CustomerType     string `json:"customer_type"`
-	Notes            string `json:"notes"`
+	StartTimeSlotID uint   `json:"start_time_slot_id"`
+	EndTimeSlotID   uint   `json:"end_time_slot_id"`
+	CustomerPhone   string `json:"customer_phone" binding:"required"`
+	CustomerName    string `json:"customer_name"`
+	CustomerType    string `json:"customer_type"`
+	Notes           string `json:"notes"`
 }
 
 func (h *BookingHandler) CreatePending(c *gin.Context) {
@@ -103,9 +105,17 @@ func (h *BookingHandler) ConfirmDeposit(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", err.Error())
 		return
 	}
-	booking, err := h.booking.ConfirmDeposit(c.Request.Context(), uint(id), req.Amount, req.Method, req.Reference)
+	actorID, actorRole, ok := bookingActor(c)
+	if !ok {
+		return
+	}
+	booking, err := h.booking.ConfirmDeposit(c.Request.Context(), actorID, actorRole, uint(id), req.Amount, req.Method, req.Reference)
 	if err != nil {
-		response.Error(c, http.StatusBadRequest, "CONFIRM_DEPOSIT_FAILED", err.Error())
+		status := http.StatusBadRequest
+		if errors.Is(err, service.ErrBookingAccessDenied) {
+			status = http.StatusForbidden
+		}
+		response.Error(c, status, "CONFIRM_DEPOSIT_FAILED", err.Error())
 		return
 	}
 	response.JSON(c, http.StatusOK, booking)
@@ -126,9 +136,17 @@ func (h *BookingHandler) Cancel(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", err.Error())
 		return
 	}
-	booking, refund, err := h.booking.CancelBooking(c.Request.Context(), uint(id), req.Reason)
+	actorID, actorRole, ok := bookingActor(c)
+	if !ok {
+		return
+	}
+	booking, refund, err := h.booking.CancelBooking(c.Request.Context(), actorID, actorRole, uint(id), req.Reason)
 	if err != nil {
-		response.Error(c, http.StatusBadRequest, "CANCEL_FAILED", err.Error())
+		status := http.StatusBadRequest
+		if errors.Is(err, service.ErrBookingAccessDenied) {
+			status = http.StatusForbidden
+		}
+		response.Error(c, status, "CANCEL_FAILED", err.Error())
 		return
 	}
 	response.JSON(c, http.StatusOK, gin.H{"booking": booking, "refund_amount": refund})
@@ -182,9 +200,9 @@ func (h *BookingHandler) UserBookings(c *gin.Context) {
 
 func (h *BookingHandler) AdminListBookings(c *gin.Context) {
 	dayStr := c.Query("day")
-	day := time.Now()
+	day := timeutil.Now()
 	if dayStr != "" {
-		parsedDay, err := time.Parse("2006-01-02", dayStr)
+		parsedDay, err := timeutil.ParseDate(dayStr)
 		if err != nil {
 			response.Error(c, http.StatusBadRequest, "BAD_REQUEST", "invalid day format")
 			return
@@ -272,11 +290,27 @@ func (h *BookingHandler) AdminDeleteBooking(c *gin.Context) {
 		req.Reason = "Admin hủy booking"
 	}
 
-	booking, refund, err := h.booking.CancelBooking(c.Request.Context(), uint(id), req.Reason)
+	actorID, actorRole, ok := bookingActor(c)
+	if !ok {
+		return
+	}
+	booking, refund, err := h.booking.CancelBooking(c.Request.Context(), actorID, actorRole, uint(id), req.Reason)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "DELETE_BOOKING_FAILED", err.Error())
 		return
 	}
 
 	response.JSON(c, http.StatusOK, gin.H{"booking": booking, "refund_amount": refund})
+}
+
+func bookingActor(c *gin.Context) (uint, models.Role, bool) {
+	uidValue, uidOK := c.Get(middleware.ContextUserIDKey)
+	roleValue, roleOK := c.Get(middleware.ContextRoleKey)
+	uid, uidTypeOK := uidValue.(uint)
+	roleText, roleTypeOK := roleValue.(string)
+	if !uidOK || !roleOK || !uidTypeOK || !roleTypeOK {
+		response.Error(c, http.StatusUnauthorized, "UNAUTHORIZED", "missing user context")
+		return 0, "", false
+	}
+	return uid, models.Role(roleText), true
 }

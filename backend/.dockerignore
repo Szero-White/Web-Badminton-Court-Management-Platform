@@ -1,0 +1,10 @@
+.env
+*.db
+*.db-*
+*.sqlite*
+*.log
+*.out
+*.err
+backups/
+bin/
+coverage/

@@ -32,8 +32,8 @@ func (s *BeverageService) ListActive() ([]models.Beverage, error) {
 	return s.repo.ListActive()
 }
 
-func (s *BeverageService) UpdateByAdmin(adminID, beverageID uint, name *string, price *int64, stock *int, note string) (*models.Beverage, error) {
-	return s.repo.UpdateByAdmin(adminID, beverageID, name, price, stock, note)
+func (s *BeverageService) UpdateByAdmin(adminID, beverageID uint, name *string, price *int64, stock *int, unit, description *string, note string) (*models.Beverage, error) {
+	return s.repo.UpdateByAdmin(adminID, beverageID, name, price, stock, unit, description, note)
 }
 
 func (s *BeverageService) DeleteByAdmin(adminID, beverageID uint, note string) error {
