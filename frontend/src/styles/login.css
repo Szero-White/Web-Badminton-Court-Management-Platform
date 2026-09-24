@@ -1,0 +1,331 @@
+/* LoginPage Styling */
+.login-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  animation: rise 0.7s ease;
+}
+
+.login-hero {
+  text-align: center;
+  margin: 40px 0 60px;
+}
+
+.login-hero h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 48px;
+  letter-spacing: 2px;
+  margin: 0 0 8px;
+  background: linear-gradient(120deg, var(--teal), var(--sun));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.login-hero p {
+  font-size: 18px;
+  color: var(--ink);
+  opacity: 0.8;
+  margin: 0;
+}
+
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin: 40px 0;
+}
+
+.portal-card {
+  position: relative;
+  padding: 32px;
+  border-radius: 24px;
+  border: 2px solid rgba(18, 35, 34, 0.15);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.portal-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(18, 35, 34, 0.25);
+  box-shadow: 0 16px 40px rgba(18, 35, 34, 0.1);
+}
+
+.portal-card h3 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.portal-card p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.75;
+  line-height: 1.5;
+}
+
+.portal-icon {
+  font-size: 60px;
+  line-height: 1;
+}
+
+.admin-card {
+  border-color: rgba(29, 116, 113, 0.3);
+  background: linear-gradient(135deg, rgba(29, 116, 113, 0.08), rgba(255, 255, 255, 0.92));
+}
+
+.admin-card:hover {
+  border-color: var(--teal);
+}
+
+.staff-card {
+  border-color: rgba(255, 138, 61, 0.3);
+  background: linear-gradient(135deg, rgba(255, 138, 61, 0.08), rgba(255, 255, 255, 0.92));
+}
+
+.staff-card:hover {
+  border-color: var(--sun);
+}
+
+.customer-card {
+  border-color: rgba(185, 255, 111, 0.3);
+  background: linear-gradient(135deg, rgba(185, 255, 111, 0.08), rgba(255, 255, 255, 0.92));
+}
+
+.customer-card:hover {
+  border-color: var(--mint);
+}
+
+.portal-btn {
+  background: linear-gradient(120deg, var(--teal), #30a3a0);
+  color: #fff;
+  padding: 12px 24px;
+  font-weight: 600;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.portal-btn:hover {
+  transform: scale(1.02);
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 60px;
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+/* Form Wrapper for Login Forms */
+.login-form-wrapper {
+  max-width: 520px;
+  margin: 40px auto;
+  padding: 40px;
+  border: 1px solid rgba(18, 35, 34, 0.12);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+}
+
+.back-btn {
+  background: transparent;
+  border: 1px solid rgba(18, 35, 34, 0.2);
+  color: var(--ink);
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  background: rgba(18, 35, 34, 0.05);
+  border-color: rgba(18, 35, 34, 0.3);
+}
+
+.login-form-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.login-form-header h2 {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+
+.login-form-header p {
+  margin: 0;
+  opacity: 0.7;
+  font-size: 14px;
+}
+
+.login-message {
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  background: rgba(234, 112, 112, 0.12);
+  border: 1px solid rgba(234, 112, 112, 0.25);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.login-form {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.login-form label {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.login-form input {
+  padding: 12px;
+  border: 1px solid rgba(18, 35, 34, 0.15);
+  border-radius: 12px;
+  font-size: 14px;
+  background: #fff;
+  transition: border-color 0.2s ease;
+}
+
+.login-form input:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(29, 116, 113, 0.1);
+}
+
+.login-form input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submit-btn {
+  background: linear-gradient(120deg, var(--teal), #30a3a0);
+  color: #fff;
+  padding: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(29, 116, 113, 0.3);
+}
+
+.submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.demo-tip {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 138, 61, 0.08);
+  border: 1px solid rgba(255, 138, 61, 0.24);
+  display: grid;
+  gap: 12px;
+}
+
+.demo-tip-copy {
+  display: grid;
+  gap: 5px;
+  text-align: left;
+}
+
+.demo-tip-copy strong {
+  color: var(--sun);
+  font-size: 13px;
+}
+
+.demo-tip-copy span {
+  color: var(--ink);
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  word-break: break-word;
+}
+
+.demo-tip-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.demo-fill-btn,
+.demo-login-btn {
+  min-height: 40px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.demo-fill-btn {
+  border: 1px solid rgba(29, 116, 113, 0.3);
+  background: #fff;
+  color: var(--teal);
+}
+
+.demo-login-btn {
+  border: 0;
+  background: linear-gradient(120deg, var(--teal), #30a3a0);
+  color: #fff;
+}
+
+.demo-fill-btn:hover:not(:disabled),
+.demo-login-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.demo-fill-btn:disabled,
+.demo-login-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .demo-tip-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.portal-secondary-btn,
+.login-mode-switch {
+  border: 0;
+  background: transparent;
+  color: #475467;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.portal-secondary-btn {
+  margin-top: 10px;
+}
+
+.login-mode-switch {
+  width: 100%;
+  margin-top: 14px;
+  text-align: center;
+}
