@@ -1,0 +1,308 @@
+/* New Table-based Timetable */
+.responsive-table-wrapper {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(18, 35, 34, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.timetable {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.timetable thead {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(90deg, #f8f6f1, #f5f3ed);
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.timetable th {
+  padding: 16px 12px;
+  text-align: center;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(18, 35, 34, 0.15);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.timetable th.court-column {
+  text-align: left;
+  width: 200px;
+  min-width: 200px;
+  position: sticky;
+  left: 0;
+  background: linear-gradient(90deg, #f0ebe5, #f5f3ed);
+  z-index: 11;
+  padding-left: 16px;
+}
+
+.timetable th.time-column {
+  min-width: 100px;
+  width: 100px;
+  font-size: 13px;
+}
+
+.timetable tbody tr {
+  border-bottom: 1px solid rgba(18, 35, 34, 0.08);
+  transition: background-color 0.2s ease;
+}
+
+.timetable tbody tr:hover {
+  background: rgba(185, 255, 111, 0.08);
+}
+
+.timetable td {
+  padding: 6px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.timetable td.court-cell {
+  position: sticky;
+  left: 0;
+  background: rgba(248, 246, 241, 0.95);
+  z-index: 9;
+  text-align: left;
+  width: 200px;
+  min-width: 200px;
+  padding: 12px 16px;
+  border-right: 2px solid rgba(18, 35, 34, 0.12);
+}
+
+.timetable td.court-cell .court-label {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.timetable td.court-cell strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.timetable td.court-cell span {
+  display: block;
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.timetable td.slot-cell {
+  min-width: 100px;
+  width: 100px;
+  height: 90px;
+  padding: 4px;
+}
+
+.timetable td.slot-cell.empty {
+  background: rgba(220, 220, 220, 0.2);
+  color: rgba(0, 0, 0, 0.25);
+  font-weight: 500;
+}
+
+.timetable td.slot-cell.booked {
+  background: linear-gradient(135deg, rgba(234, 112, 112, 0.15), rgba(255, 255, 255, 0.8));
+}
+
+.timetable td.slot-cell.booked .slot-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 6px;
+}
+
+.timetable td.slot-cell.booked .slot-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.timetable td.slot-cell.booked strong {
+  font-size: 13px;
+  color: #ea7070;
+}
+
+.timetable td.slot-cell.booked .booking-ref {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.timetable td.slot-cell.free .slot-button {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  padding: 6px;
+  background: linear-gradient(135deg, rgba(185, 255, 111, 0.3), rgba(255, 255, 255, 0.9));
+  border: 2px solid rgba(185, 255, 111, 0.5);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  transition: all 0.2s ease;
+}
+
+.timetable td.slot-cell.free .slot-button:hover {
+  background: linear-gradient(135deg, rgba(185, 255, 111, 0.5), rgba(255, 255, 255, 0.95));
+  border-color: var(--mint);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(185, 255, 111, 0.3);
+}
+
+.slot-button .slot-time {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.slot-button strong {
+  display: block;
+  color: var(--teal);
+  font-size: 14px;
+}
+
+.slot-button small {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.court-card {
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid rgba(18, 35, 34, 0.12);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.slot-list {
+  display: grid;
+  gap: 10px;
+}
+
+.slot-item {
+  display: flex;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.metrics-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.metric-card {
+  background: linear-gradient(160deg, rgba(29, 116, 113, 0.08), rgba(255, 138, 61, 0.12));
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.metric-card label {
+  opacity: 0.7;
+  font-size: 13px;
+}
+
+.metric-card h3 {
+  margin: 6px 0 0;
+}
+
+.ops-board {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.ops-board article {
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  border-left: 4px solid var(--sun);
+}
+
+.admin-forms {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.form-card {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(18, 35, 34, 0.12);
+  background: rgba(255, 255, 255, 0.82);
+  display: grid;
+  gap: 10px;
+}
+
+.form-card h3 {
+  margin: 0 0 4px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(16px);
+  }
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    padding: 14px;
+  }
+
+  .top-nav {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .brand h1 {
+    font-size: 30px;
+  }
+
+  .filters {
+    width: 100%;
+  }
+
+  .filters input,
+  .filters button {
+    width: 100%;
+  }
+
+  .filters select {
+    width: 100%;
+  }
+
+  .timetable-head,
+  .timetable-row {
+    min-width: 860px;
+  }
+}
+

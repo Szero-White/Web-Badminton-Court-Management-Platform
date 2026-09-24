@@ -1,0 +1,269 @@
+/* Heatmap Table Style */
+.heatmap-wrapper {
+  border-radius: 18px;
+  overflow: auto;
+  border: 2px solid rgba(18, 35, 34, 0.15);
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  max-height: 70vh;
+  margin: 20px 0;
+}
+
+.heatmap {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.heatmap thead {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(90deg, #f0ebe5 0%, #f8f6f1 50%, #f5f3ed 100%);
+  z-index: 20;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.heatmap th {
+  padding: 14px 8px;
+  text-align: center;
+  font-weight: 700;
+  border: 1px solid rgba(18, 35, 34, 0.12);
+  font-size: 13px;
+  color: var(--ink);
+  user-select: none;
+}
+
+.heatmap th.time-header {
+  width: 80px;
+  min-width: 80px;
+  position: sticky;
+  left: 0;
+  background: linear-gradient(90deg, #efe6d6, #f5f3ed);
+  z-index: 21;
+  text-align: center;
+  border-right: 2px solid rgba(18, 35, 34, 0.15);
+}
+
+.heatmap th.court-header {
+  min-width: 120px;
+  width: 120px;
+  padding: 12px 8px;
+}
+
+.court-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.court-header-content strong {
+  display: block;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.court-header-content small {
+  display: block;
+  font-size: 11px;
+  opacity: 0.65;
+  font-weight: 400;
+}
+
+.heatmap tbody tr {
+  border-bottom: 1px solid rgba(18, 35, 34, 0.08);
+  transition: background-color 0.15s ease;
+}
+
+.heatmap tbody tr:hover {
+  background: rgba(185, 255, 111, 0.08);
+}
+
+.heatmap td {
+  padding: 4px;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid rgba(18, 35, 34, 0.08);
+}
+
+.heatmap td.time-cell {
+  position: sticky;
+  left: 0;
+  width: 80px;
+  min-width: 80px;
+  background: linear-gradient(90deg, #f8f6f1, #f5f3ed);
+  z-index: 19;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+  border-right: 2px solid rgba(18, 35, 34, 0.15);
+  border-bottom: 1px solid rgba(18, 35, 34, 0.08);
+}
+
+.heatmap td.heatmap-cell {
+  height: 80px;
+  min-width: 120px;
+  width: 120px;
+  padding: 2px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.heatmap td.heatmap-cell.empty {
+  background: rgba(200, 200, 200, 0.1);
+  color: rgba(0, 0, 0, 0.2);
+}
+
+.heatmap td.heatmap-cell.free {
+  background: linear-gradient(135deg, rgba(185, 255, 111, 0.25), rgba(220, 255, 180, 0.15));
+  border: 1.5px solid rgba(185, 255, 111, 0.5);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.heatmap td.heatmap-cell.booked {
+  background: linear-gradient(135deg, rgba(234, 112, 112, 0.2), rgba(255, 180, 180, 0.1));
+  border: 1.5px solid rgba(234, 112, 112, 0.4);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.heatmap td.heatmap-cell.booked.customer-walkin {
+  background: linear-gradient(135deg, rgba(235, 116, 116, 0.22), rgba(255, 206, 206, 0.16));
+  border-color: rgba(214, 72, 72, 0.45);
+}
+
+.heatmap td.heatmap-cell.booked.customer-monthly {
+  background: linear-gradient(135deg, rgba(104, 137, 232, 0.2), rgba(200, 220, 255, 0.16));
+  border-color: rgba(73, 112, 210, 0.45);
+}
+
+.heatmap td.heatmap-cell.booked.is-selected,
+.heatmap td.heatmap-cell.booked.customer-monthly.is-selected,
+.heatmap td.heatmap-cell.booked.customer-walkin.is-selected {
+  border: 3px solid #00c853 !important;
+  box-shadow: 0 0 0 4px rgba(0, 200, 83, 0.4), inset 0 0 15px rgba(0, 200, 83, 0.15);
+  transform: scale(1.03);
+  z-index: 20;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.cell-button {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  transition: all 0.2s ease;
+}
+
+.heatmap td.heatmap-cell.free:hover .cell-button {
+  transform: scale(1.08);
+}
+
+.heatmap td.heatmap-cell.free:active .cell-button {
+  transform: scale(0.95);
+}
+
+.cell-price {
+  display: block;
+  font-weight: 700;
+  color: var(--teal);
+  font-size: 13px;
+}
+
+.cell-label {
+  display: block;
+  font-size: 12px;
+  opacity: 0.8;
+  font-weight: 600;
+}
+
+/* Booked cell content */
+.cell-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.booking-code {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #c94a4a;
+  word-break: break-all;
+}
+
+.booking-time {
+  display: block;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.heatmap td.heatmap-cell.booked.customer-walkin .booking-code,
+.heatmap td.heatmap-cell.booked.customer-walkin .booking-time {
+  color: #b53a3a;
+  opacity: 0.96;
+}
+
+.heatmap td.heatmap-cell.booked.customer-monthly .booking-code,
+.heatmap td.heatmap-cell.booked.customer-monthly .booking-time {
+  color: #2b4ea5;
+  opacity: 0.96;
+}
+
+.booking-deposit-tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+/* Responsive for smaller screens */
+@media (max-width: 1024px) {
+  .heatmap th.court-header,
+  .heatmap td.heatmap-cell {
+    min-width: 100px;
+    width: 100px;
+    font-size: 12px;
+  }
+  
+  .heatmap td.heatmap-cell {
+    height: 70px;
+  }
+}
+
+@media (max-width: 768px) {
+  .heatmap th.court-header,
+  .heatmap td.heatmap-cell {
+    min-width: 90px;
+    width: 90px;
+    padding: 2px;
+  }
+  
+  .heatmap td.heatmap-cell {
+    height: 60px;
+  }
+  
+  .cell-price {
+    font-size: 12px;
+  }
+  
+  .cell-label {
+    font-size: 10px;
+  }
+}

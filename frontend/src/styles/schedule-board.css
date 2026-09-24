@@ -1,0 +1,119 @@
+.timetable-shell {
+  display: grid;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.timetable-head,
+.timetable-row {
+  display: grid;
+  grid-template-columns: 220px repeat(auto-fit, minmax(120px, 1fr));
+  min-width: 980px;
+  gap: 10px;
+}
+
+.timetable-head > div,
+.timetable-cell,
+.court-label {
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid rgba(18, 35, 34, 0.12);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.timetable-head > div {
+  font-weight: 700;
+  text-align: center;
+}
+
+.timetable-row {
+  align-items: stretch;
+}
+
+.court-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.court-label span,
+.timetable-cell small,
+.drink-card p {
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.timetable-cell {
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.timetable-cell.free {
+  background: linear-gradient(180deg, rgba(185, 255, 111, 0.36), rgba(255, 255, 255, 0.92));
+  color: var(--ink);
+}
+
+.timetable-cell.booked {
+  background: linear-gradient(180deg, rgba(234, 112, 112, 0.2), rgba(255, 255, 255, 0.9));
+}
+
+.timetable-cell.empty {
+  background: rgba(255, 255, 255, 0.45);
+  color: rgba(18, 35, 34, 0.4);
+  align-items: center;
+  justify-content: center;
+}
+
+.drink-board {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 138, 61, 0.15), rgba(29, 116, 113, 0.12));
+  border: 1px solid rgba(18, 35, 34, 0.12);
+}
+
+.drink-board-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.drink-board-header h3,
+.drink-card h4 {
+  margin: 0;
+}
+
+.drink-chip {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #122322;
+  color: #fff;
+  font-size: 12px;
+}
+
+.drink-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.drink-card {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(18, 35, 34, 0.12);
+}
+
+.drink-card strong {
+  display: block;
+  margin: 8px 0;
+}
+

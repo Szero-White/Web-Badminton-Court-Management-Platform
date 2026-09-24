@@ -1,0 +1,150 @@
+.staff-board-toolbar,
+.staff-date-controls,
+.staff-selected-date,
+.staff-selected-date > div {
+  display: flex;
+  align-items: center;
+}
+
+.staff-board-toolbar {
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.staff-board-toolbar h3 {
+  margin: 0;
+}
+
+.staff-board-toolbar p {
+  margin-top: 4px;
+}
+
+.staff-date-controls {
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.staff-date-controls > span {
+  color: #667085;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.staff-date-shortcuts {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.staff-date-shortcuts button,
+.staff-date-controls input {
+  padding: 8px 11px;
+  border: 1px solid rgba(18, 35, 34, .14);
+  border-radius: 10px;
+  background: #f8faf9;
+  color: #475467;
+}
+
+.staff-date-shortcuts button.is-active {
+  border-color: transparent;
+  background: linear-gradient(135deg, #1d7471, #2aa6a1);
+  color: #fff;
+  font-weight: 800;
+}
+
+.staff-selected-date {
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1d7471, #2aa6a1);
+  color: #fff;
+}
+
+.staff-selected-date > div {
+  gap: 8px;
+}
+
+.staff-selected-date > div:first-child span {
+  font-size: 22px;
+}
+
+.staff-selected-date button {
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+}
+
+.staff-slot-note {
+  display: -webkit-box;
+  margin-top: 2px;
+  overflow: hidden;
+  opacity: .72;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.staff-form-hint,
+.staff-empty-note {
+  color: #667085;
+  font-size: 13px;
+}
+
+.staff-checkin-details,
+.staff-booking-summary {
+  display: grid;
+  gap: 5px;
+  margin-top: 4px;
+  padding: 12px;
+  border: 1px solid rgba(18, 35, 34, .12);
+  border-radius: 12px;
+  background: rgba(29, 116, 113, .05);
+}
+
+.staff-checkin-details p,
+.staff-booking-summary p {
+  margin: 0;
+}
+
+.staff-checkin-feed {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.staff-checkin-feed > div {
+  display: grid;
+  gap: 8px;
+}
+
+.staff-checkin-feed article {
+  display: grid;
+  gap: 3px;
+  padding: 9px 10px;
+  border: 1px solid rgba(18, 35, 34, .1);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.staff-checkin-feed span {
+  color: #667085;
+  font-size: 13px;
+}
+
+.staff-booking-note {
+  color: #667085;
+  font-style: italic;
+}
+
+@media (max-width: 760px) {
+  .staff-selected-date {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

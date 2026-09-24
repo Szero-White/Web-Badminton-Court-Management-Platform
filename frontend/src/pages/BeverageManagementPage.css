@@ -1,0 +1,168 @@
+.beverage-management-page {
+  display: grid;
+  gap: 20px;
+}
+
+.beverage-page-header,
+.beverage-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.beverage-page-header h1,
+.beverage-section-heading h2 {
+  margin: 0;
+}
+
+.beverage-page-header > div > p:last-child {
+  margin: 8px 0 0;
+  color: #667085;
+}
+
+.beverage-eyebrow {
+  margin: 0 0 6px;
+  color: #1d7471;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.beverage-page-message {
+  margin: 0;
+}
+
+.beverage-card {
+  padding: 20px;
+  border: 1px solid rgba(18, 35, 34, .12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .88);
+  box-shadow: 0 8px 24px rgba(18, 35, 34, .06);
+}
+
+.beverage-section-heading {
+  margin-bottom: 16px;
+}
+
+.beverage-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.beverage-form-grid label {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.beverage-form-grid input,
+.beverage-form-grid select {
+  width: 100%;
+}
+
+.beverage-form-wide,
+.beverage-form-actions {
+  grid-column: 1 / -1;
+}
+
+.beverage-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.beverage-table-wrap {
+  overflow-x: auto;
+}
+
+.beverage-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.beverage-table th,
+.beverage-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(18, 35, 34, .1);
+  text-align: left;
+  vertical-align: top;
+}
+
+.beverage-table th {
+  color: #475467;
+  font-size: 12px;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.beverage-table td small {
+  display: block;
+  margin-top: 4px;
+  color: #667085;
+}
+
+.beverage-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.beverage-stock-status {
+  display: inline-flex;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.beverage-stock-status.is-ready {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.beverage-stock-status.is-low {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.beverage-stock-status.is-empty {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.beverage-empty {
+  padding: 24px;
+  color: #667085;
+  text-align: center;
+}
+
+.beverage-history-table td:last-child {
+  max-width: 520px;
+  white-space: normal;
+}
+
+.btn-danger {
+  border-color: rgba(180, 35, 24, .25);
+  color: #b42318;
+  background: #fff5f4;
+}
+
+@media (max-width: 720px) {
+  .beverage-page-header,
+  .beverage-section-heading {
+    flex-direction: column;
+  }
+
+  .beverage-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .beverage-form-wide,
+  .beverage-form-actions {
+    grid-column: auto;
+  }
+}

@@ -84,7 +84,7 @@ export default function AdminCheckinPage() {
     <section className="panel admin-checkin-page">
       <div className="admin-checkin-hero">
         <div>
-          <h2>Check-in khách cho Admin</h2>
+          <h2>Check-in khách hàng</h2>
           <p>Trang này dùng cùng API và cùng nguồn dữ liệu check-in như nhân viên.</p>
         </div>
         <div className="admin-checkin-links">

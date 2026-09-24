@@ -1,230 +1,171 @@
-import { useEffect, useState } from 'react';
-import { beverageApi, adminApi } from '../services/api';
+import { useCallback, useEffect, useState } from 'react';
+import { adminApi } from '../services/api';
+import BeverageForm from '../features/beverages/components/BeverageForm';
+import BeverageHistoryPanel from '../features/beverages/components/BeverageHistoryPanel';
+import BeverageInventoryTable from '../features/beverages/components/BeverageInventoryTable';
+import './BeverageManagementPage.css';
+
+const EMPTY_FORM = {
+  name: '',
+  price: '',
+  stock: '',
+  unit: 'chai',
+  description: '',
+  note: ''
+};
+
+function apiError(error, fallback) {
+  return error?.response?.data?.error?.message || fallback;
+}
 
 export default function BeverageManagementPage() {
   const [beverages, setBeverages] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [formData, setFormData] = useState({
-    name: '',
-    price: 0,
-    stock: 0,
-    unit: 'chai',
-    description: ''
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
+  const [historyItem, setHistoryItem] = useState(null);
+  const [historyRows, setHistoryRows] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
-  async function loadBeverages() {
+  const loadBeverages = useCallback(async ({ announce = false } = {}) => {
     setLoading(true);
     try {
-      const res = await beverageApi.list();
-      setBeverages(res.data?.data || []);
-      setMessage('Đã tải danh sách nước uống.');
+      const response = await adminApi.listBeverages();
+      setBeverages(response.data?.data || []);
+      if (announce) setMessage('Đã cập nhật dữ liệu kho nước uống.');
     } catch (error) {
-      setMessage(error?.response?.data?.error?.message || 'Không thể tải nước uống.');
+      setMessage(apiError(error, 'Không thể tải danh sách nước uống.'));
     } finally {
       setLoading(false);
     }
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    try {
-      const payload = {
-        name: formData.name,
-        price: Number(formData.price),
-        stock: Number(formData.stock),
-        unit: formData.unit || 'chai',
-        description: formData.description
-      };
-
-      if (editingId) {
-        // Update logic - note: you may need to implement update API endpoint
-        setMessage('✓ Cập nhật nước uống thành công.');
-        setEditingId(null);
-      } else {
-        const res = await adminApi.createBeverage(payload);
-        setMessage(`✓ Thêm nước uống thành công: ${res.data?.data?.name}`);
-      }
-
-      setFormData({
-        name: '',
-        price: 0,
-        stock: 0,
-        unit: 'chai',
-        description: ''
-      });
-      loadBeverages();
-    } catch (error) {
-      setMessage(error?.response?.data?.error?.message || 'Không thể thêm nước uống.');
-    }
-  }
-
-  function startEdit(beverage) {
-    setEditingId(beverage.id);
-    setFormData({
-      name: beverage.name,
-      price: beverage.price,
-      stock: beverage.stock,
-      unit: beverage.unit || 'chai',
-      description: beverage.description || ''
-    });
-  }
+  }, []);
 
   useEffect(() => {
     loadBeverages();
-  }, []);
+  }, [loadBeverages]);
+
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function resetForm() {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+  }
+
+  function startEdit(item) {
+    setEditingId(item.id);
+    setForm({
+      name: item.name || '',
+      price: String(item.price ?? ''),
+      stock: String(item.stock ?? ''),
+      unit: item.unit || 'chai',
+      description: item.description || '',
+      note: ''
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    const payload = {
+      name: form.name.trim(),
+      price: Number(form.price),
+      stock: Number(form.stock),
+      unit: form.unit,
+      description: form.description.trim()
+    };
+
+    if (!payload.name || !Number.isFinite(payload.price) || payload.price < 0 || !Number.isInteger(payload.stock) || payload.stock < 0) {
+      setMessage('Vui lòng kiểm tra tên, giá bán và số lượng tồn kho.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      if (editingId) {
+        await adminApi.updateBeverage(editingId, { ...payload, note: form.note.trim() });
+        setMessage('Cập nhật mặt hàng thành công.');
+      } else {
+        await adminApi.createBeverage(payload);
+        setMessage('Thêm mặt hàng thành công.');
+      }
+      resetForm();
+      await loadBeverages();
+    } catch (error) {
+      setMessage(apiError(error, editingId ? 'Không thể cập nhật mặt hàng.' : 'Không thể thêm mặt hàng.'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(item) {
+    if (!window.confirm(`Xóa mặt hàng “${item.name}”? Hành động này sẽ được ghi vào lịch sử.`)) return;
+    try {
+      await adminApi.deleteBeverage(item.id, 'Quản trị viên xóa mặt hàng từ trang quản lý kho');
+      if (editingId === item.id) resetForm();
+      if (historyItem?.id === item.id) setHistoryItem(null);
+      setMessage(`Đã xóa mặt hàng ${item.name}.`);
+      await loadBeverages();
+    } catch (error) {
+      setMessage(apiError(error, 'Không thể xóa mặt hàng.'));
+    }
+  }
+
+  async function openHistory(item) {
+    setHistoryItem(item);
+    setHistoryRows([]);
+    setHistoryLoading(true);
+    try {
+      const response = await adminApi.beverageHistory(item.id, 30);
+      setHistoryRows(response.data?.data || []);
+    } catch (error) {
+      setMessage(apiError(error, 'Không thể tải lịch sử chỉnh sửa.'));
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
 
   return (
-    <section className="panel customer">
-      <div className="panel-header">
+    <section className="panel beverage-management-page">
+      <header className="beverage-page-header">
         <div>
-          <h2>Quản Lý Nước Uống</h2>
-          <p>Nhập thêm nước uống, cập nhật số lượng stock, thống kê tồn kho.</p>
+          <p className="beverage-eyebrow">Quản lý kho</p>
+          <h1>Nước uống & hàng bán tại quầy</h1>
+          <p>Quản lý danh mục, giá bán, tồn kho và lịch sử thay đổi trên một màn hình.</p>
         </div>
-      </div>
+        <button type="button" className="btn-secondary" onClick={() => loadBeverages({ announce: true })} disabled={loading}>
+          {loading ? 'Đang tải...' : 'Làm mới'}
+        </button>
+      </header>
 
-      <p className="message">{message}</p>
+      {message ? <p className="message beverage-page-message" role="status">{message}</p> : null}
 
-      <div className="admin-forms">
-        {/* Form thêm/sửa nước */}
-        <div className="form-card">
-          <h3>{editingId ? '✎ Chỉnh Sửa' : '+ Thêm Nước Mới'}</h3>
-          <form onSubmit={handleSubmit}>
-            <label>
-              Tên Nước
-              <input
-                type="text"
-                placeholder="VD: Nước cam ép"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </label>
+      <BeverageForm
+        form={form}
+        editingId={editingId}
+        onChange={updateField}
+        onSubmit={handleSubmit}
+        onCancel={resetForm}
+        saving={saving}
+      />
 
-            <label>
-              Giá (VND)
-              <input
-                type="number"
-                placeholder="15000"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                required
-              />
-            </label>
+      <BeverageInventoryTable
+        beverages={beverages}
+        loading={loading}
+        onEdit={startEdit}
+        onDelete={handleDelete}
+        onHistory={openHistory}
+      />
 
-            <label>
-              Số Lượng Hiện Tại
-              <input
-                type="number"
-                placeholder="50"
-                value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                required
-              />
-            </label>
-
-            <label>
-              Đơn Vị
-              <select value={formData.unit} onChange={(e) => setFormData({ ...formData, unit: e.target.value })}>
-                <option value="chai">Chai</option>
-                <option value="lon">Lon</option>
-                <option value="ly">Ly</option>
-                <option value="hộp">Hộp</option>
-              </select>
-            </label>
-
-            <label>
-              Mô Tả
-              <input
-                type="text"
-                placeholder="VD: Cam tươi, lạnh, ngon"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </label>
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button type="submit">{editingId ? '💾 Lưu' : '➕ Thêm'}</button>
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingId(null);
-                    setFormData({
-                      name: '',
-                      price: 0,
-                      stock: 0,
-                      unit: 'chai',
-                      description: ''
-                    });
-                  }}
-                  style={{ background: '#ccc', color: '#000' }}
-                >
-                  ✕ Hủy
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-
-        {/* Danh sách nước */}
-        <div className="form-card" style={{ gridColumn: '1 / -1' }}>
-          <h3>Kho Nước Uống ({beverages.length})</h3>
-          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #ddd' }}>
-                <th>Tên Nước</th>
-                <th>Giá (VND)</th>
-                <th>Tồn Kho</th>
-                <th>Đơn Vị</th>
-                <th>Trạng Thái</th>
-                <th>Hành Động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {beverages.map((drink) => (
-                <tr key={drink.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '10px' }}><strong>{drink.name}</strong></td>
-                  <td style={{ padding: '10px' }}>{drink.price?.toLocaleString('vi-VN')}</td>
-                  <td style={{ padding: '10px' }}>{drink.stock} {drink.unit || 'chai'}</td>
-                  <td style={{ padding: '10px' }}>{drink.unit || 'chai'}</td>
-                  <td style={{ padding: '10px' }}>
-                    {drink.stock > 0 ? (
-                      <span style={{ color: '#51cf66' }}>
-                        {drink.stock <= 10 ? '⚠️ Sắp hết' : '✓ Đủ'}
-                      </span>
-                    ) : (
-                      <span style={{ color: '#ff6b6b' }}>❌ Hết</span>
-                    )}
-                  </td>
-                  <td style={{ padding: '10px' }}>
-                    <button
-                      onClick={() => startEdit(drink)}
-                      style={{
-                        background: '#4c6ef5',
-                        color: '#fff',
-                        padding: '6px 12px',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Sửa
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {beverages.length === 0 && (
-            <p style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-              Chưa có nước uống nào. Hãy thêm nước mới từ form bên trên.
-            </p>
-          )}
-        </div>
-      </div>
+      <BeverageHistoryPanel
+        item={historyItem}
+        rows={historyRows}
+        loading={historyLoading}
+        onClose={() => setHistoryItem(null)}
+      />
     </section>
   );
 }
