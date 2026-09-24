@@ -1,182 +1,154 @@
 # Badminton Court Management Platform
 
-Nen tang quan ly san cau long voi luong dat san online, chong trung lich, van hanh tai quay va dashboard doanh thu.
+> Production-oriented full-stack platform for badminton court booking and daily facility operations.  
+> Nền tảng full-stack quản lý sân cầu lông, booking, check-in, doanh thu, đồ uống và vận hành tại quầy.
 
-## Cong nghe
+**Demo after one-command startup:** `http://localhost:8080`  
+**LAN demo:** `http://<your-LAN-IP>:8080` (the launcher prints the exact address)  
+**Temporary public HTTPS demo:** run `scripts/run-public.ps1 -Tunnel`; `cloudflared` prints the public URL.  
+**Repository:** `https://github.com/Szero-White/Web-Badminton-Court-Management-Platform`
 
-- Backend: Go + Gin + GORM
-- Database chinh khi chay Docker: PostgreSQL
-- Cache/Lock khi chay Docker: Redis
-- Database fallback khi chay local: SQLite
-- Frontend: React + Vite
-- DevOps: Docker Compose
+> A permanent public server/domain is not hard-coded in this repository because no production host was supplied. Update this line with the real HTTPS domain after deployment rather than publishing a fake demo URL.
 
-## Cau truc thu muc
+## Demo accounts
+
+The demo stack seeds these accounts when `DEMO_SEED_ENABLED=true`:
+
+| Role | Email | Password | Main functions |
+|---|---|---|---|
+| Admin | `admin@badminton.demo` | `Admin@12345` | Dashboard, booking desk, courts, staff, beverages, revenue |
+| Staff | `staff@badminton.demo` | `Staff@12345` | Booking operations, check-in, beverage counter, shift transactions |
+| Customer | `customer@badminton.demo` | `Customer@12345` | Browse schedule, place booking holds, view/cancel personal bookings |
+
+**Never enable demo seeding or reuse these passwords in a real commercial production environment.**
+
+## Why this repository is structured this way
+
+The project is intentionally organized like a maintainable business application instead of a single-file demo:
 
 ```text
-backend/cmd/api        Entry point backend server
-backend/internal       Config, models, repository, service, handler, middleware
-backend/migrations     SQL schema
-frontend/src/pages     Cac man hinh frontend
-frontend/src/services  Cau hinh API frontend
-frontend/src/styles    CSS dung chung
-docker-compose.yml     Cau hinh chay full stack bang Docker
+.
+├── backend/
+│   ├── cmd/api/                 # Composition root and process lifecycle
+│   ├── internal/
+│   │   ├── config/              # Environment configuration
+│   │   ├── db/                  # Connections, schema migration, demo seed
+│   │   ├── handler/             # HTTP handlers
+│   │   ├── middleware/          # Auth, security, rate limiting, CORS
+│   │   ├── models/              # Domain persistence models
+│   │   ├── repository/          # Data access
+│   │   ├── server/              # Router + health/readiness
+│   │   ├── service/             # Business logic
+│   │   └── timeutil/            # Business timezone
+│   ├── migrations/              # PostgreSQL baseline schema
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── components/          # Shared UI
+│   │   ├── features/            # Feature-level views
+│   │   ├── pages/               # Page orchestration
+│   │   ├── routes/              # Route definitions / role guards
+│   │   ├── services/api/        # API modules by domain
+│   │   ├── styles/              # Focused CSS modules
+│   │   └── utils/               # Shared booking/date/format helpers
+│   ├── nginx.conf               # SPA + reverse proxy
+│   └── Dockerfile
+├── docs/                        # Architecture, API, deployment, audit
+├── scripts/                     # Run/quality utilities
+├── .github/workflows/ci.yml     # GitHub Actions CI
+├── docker-compose.yml           # Demo/local full stack
+└── docker-compose.prod.yml      # Production override/profile
 ```
 
-## Cach chay nhanh tren may nay
+## Main features
 
-Day la cach minh khuyen dung hien tai vi backend co fallback SQLite, khong bat buoc phai cai Postgres/Redis rieng.
+### Customer
+- View court schedule by date.
+- Register/login as customer.
+- Place a temporary booking hold.
+- View personal booking status; payment is confirmed only by trusted staff/admin or a future payment-gateway integration.
+- View personal bookings and cancel subject to policy.
 
-### 1. Chay backend
+### Staff
+- Create bookings for walk-in/monthly customers.
+- Operate booking desk and check-in flow.
+- Update customer/booking details and deposits.
+- Sell/restock beverages.
+- Record cash/transfer/refund/owner-withdrawal transactions.
+- Review shift summary.
 
-Mo terminal thu nhat:
+### Admin
+- Booking desk and booking cancellation.
+- Court setup, operating hours, price, active/maintenance state.
+- Staff/admin account management.
+- Beverage catalog, stock adjustment, audit history.
+- Revenue/booking dashboard.
 
-```bash
-cd backend
-go run ./cmd/api
+## Reliability and security highlights
+
+- PostgreSQL is the production source of truth; SQLite is development fallback only.
+- Redis distributed holds plus DB transaction checks and a unique partial index protect against double booking.
+- Pending holds expire automatically.
+- Payment/refund/deposit-adjustment records preserve accounting history.
+- JWT access and refresh tokens have explicit token types and HS256 validation.
+- Role-based authorization for customer/staff/admin routes.
+- Configurable CORS, auth rate limiting, request body limit, request IDs and security headers.
+- HTTP timeouts, graceful shutdown, readiness checks and PostgreSQL connection pooling.
+- `Asia/Ho_Chi_Minh` is the canonical business timezone.
+
+## Quick start — Docker
+
+### Windows / PowerShell
+
+```powershell
+.\scripts\run-public.ps1
 ```
 
-Backend se chay o:
+Then open:
 
 ```text
 http://localhost:8080
-http://localhost:8080/health
 ```
 
-Neu may khong co PostgreSQL local, backend se tu dong dung SQLite tai:
+The launcher persists local demo secrets in Git-ignored `.env.demo.local`, waits for `/ready`, and then prints the local/LAN URLs.
 
-```text
-backend/badminton_dev.db
+To expose a temporary public HTTPS demo after installing `cloudflared`:
+
+```powershell
+.\scripts\run-public.ps1 -Tunnel
 ```
 
-Neu may khong co Redis local, backend se dung in-memory lock fallback.
-
-### 2. Chay frontend
-
-Mo terminal thu hai:
+### Docker Compose directly
 
 ```bash
-cd frontend
-npm install
-npm run dev
+docker compose up -d --build
 ```
 
-Frontend se chay o:
-
-```text
-http://localhost:5173
-```
-
-Sau khi chay xong, mo trinh duyet vao:
-
-```text
-http://localhost:5173
-```
-
-## Cach kiem tra server co song khong
-
-Backend:
+Stop the stack:
 
 ```bash
-curl http://localhost:8080/health
+docker compose down
 ```
 
-Frontend:
+Preserve database data by keeping the named volumes. Use `docker compose down -v` only when you intentionally want to remove demo data.
 
-```text
-http://localhost:5173
-```
+### Production Compose
 
-Neu frontend khong vao duoc, kiem tra terminal frontend co hien Vite ready khong.
-
-## Cach chay bang Docker Compose
-
-Lenh trong README cu:
+Create your secure production environment from `.env.production.example`, then run:
 
 ```bash
-docker compose up --build
+docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
-Sau khi chay thanh cong:
+Do not enable demo seeding in production. Put the public Nginx endpoint behind a real TLS/domain edge.
 
-```text
-Frontend:    http://localhost:5173
-Backend API: http://localhost:8080
-Health:      http://localhost:8080/health
-Postgres:    localhost:5432
-Redis:       localhost:6379
-```
-
-Luu y: hien tai `backend/go.mod` yeu cau Go `1.23`, nhung `backend/Dockerfile` dang dung image `golang:1.22-alpine`. Neu Docker build bao loi:
-
-```text
-go.mod requires go >= 1.23
-```
-
-thi sua dong dau trong `backend/Dockerfile` thanh:
-
-```dockerfile
-FROM golang:1.23-alpine AS builder
-```
-
-Ngoai ra, neu database Docker da bi loi schema cu, co the reset rieng database Docker bang:
-
-```bash
-docker compose down -v
-docker compose up --build
-```
-
-Can than: `docker compose down -v` se xoa database PostgreSQL trong Docker volume cua project.
-
-## API chinh
-
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/refresh`
-- `GET /api/v1/courts`
-- `GET /api/v1/slots/available?day=YYYY-MM-DD`
-- `GET /api/v1/slots/day?day=YYYY-MM-DD`
-- `POST /api/v1/bookings/pending`
-- `GET /api/v1/bookings/me`
-- `POST /api/v1/bookings/{id}/deposit`
-- `POST /api/v1/bookings/{id}/cancel`
-- `POST /api/v1/staff/checkin`
-- `POST /api/v1/staff/bookings/create`
-- `PUT /api/v1/staff/bookings/{id}`
-- `GET /api/v1/staff/beverages`
-- `POST /api/v1/staff/beverages/sell`
-- `POST /api/v1/staff/beverages/restock`
-- `GET /api/v1/admin/dashboard/summary`
-- `POST /api/v1/admin/courts`
-- `GET /api/v1/admin/courts`
-- `POST /api/v1/admin/beverages`
-- `GET /api/v1/admin/beverages`
-- `PUT /api/v1/admin/beverages/{id}`
-- `DELETE /api/v1/admin/beverages/{id}`
-- `POST /api/v1/admin/staff`
-- `GET /api/v1/admin/staff`
-- `PUT /api/v1/admin/staff/{id}`
-- `DELETE /api/v1/admin/staff/{id}`
-
-## Ghi chu khi phat trien
-
-- Sua route va menu: `frontend/src/App.jsx`
-- Sua API frontend goi backend: `frontend/src/services/api.js`
-- Sua giao dien chung: `frontend/src/styles/global.css`
-- Sua trang khach dat san: `frontend/src/pages/CustomerPage.jsx`
-- Sua dashboard admin: `frontend/src/pages/AdminPage.jsx`
-- Sua booking desk admin: `frontend/src/pages/AdminBookingDeskPage.jsx`
-- Sua trang nhan vien: `frontend/src/pages/StaffPage.jsx`
-- Sua ban/nhap nuoc: `frontend/src/pages/BeverageCounterPage.jsx`
-- Sua quan ly san: `frontend/src/pages/CourtManagementPage.jsx`
-- Sua quan ly nhan vien: `frontend/src/pages/StaffManagementPage.jsx`
-
-## Lenh da chay thanh cong tren may nay
+## Local development without Docker
 
 Backend:
 
 ```bash
 cd backend
+cp .env.example .env
 go run ./cmd/api
 ```
 
@@ -184,12 +156,37 @@ Frontend:
 
 ```bash
 cd frontend
-npm run dev -- --host 127.0.0.1
+cp .env.example .env
+npm ci
+npm run dev
 ```
 
-Ket qua:
+Development URLs: frontend `http://localhost:5173`, API `http://localhost:8080`.
 
-```text
-Frontend: http://localhost:5173
-Backend:  http://localhost:8080/health
+## Quality checks
+
+On Windows:
+
+```powershell
+.\scripts\quality-check.ps1
 ```
+
+The script formats/tests/vets Go, installs/builds the frontend, and validates Docker Compose configuration.
+
+GitHub Actions runs equivalent backend/frontend checks on pushes and pull requests to `main`.
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [API reference](docs/API.md)
+- [Deployment guide](docs/DEPLOYMENT.md)
+- [Professional product audit](docs/PROFESSIONAL_AUDIT.md)
+- [Load testing](docs/LOAD_TESTING.md)
+- [Commercial release checklist](docs/RELEASE_CHECKLIST.md)
+- [Security policy](SECURITY.md)
+- [Contributing](CONTRIBUTING.md)
+- [Refactor changelog](CHANGELOG_REFACTOR.md)
+
+## Production note
+
+This refactor makes the repository a strong professional portfolio and small-business deployment baseline. “Enterprise-ready” should only be claimed after the target environment has passed automated integration/E2E tests, realistic load tests, backup/restore drills, observability setup, permanent TLS/domain configuration, and an operational release/rollback process. The exact remaining checklist is documented in `docs/PROFESSIONAL_AUDIT.md`.
