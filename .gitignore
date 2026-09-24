@@ -77,3 +77,4 @@ backend/*.bak
 
 .ui-backup/
 .local-config-backup/
+backend/*.exe~

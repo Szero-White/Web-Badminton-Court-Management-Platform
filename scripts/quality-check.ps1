@@ -12,8 +12,10 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'go test failed.' }
   go vet ./...
   if ($LASTEXITCODE -ne 0) { throw 'go vet failed.' }
-  go build ./cmd/api
+  $tmpBinary = Join-Path $env:TEMP 'badminton-api-quality-check.exe'
+  go build -o $tmpBinary ./cmd/api
   if ($LASTEXITCODE -ne 0) { throw 'go build failed.' }
+  Remove-Item -LiteralPath $tmpBinary -Force -ErrorAction SilentlyContinue
 } finally {
   Pop-Location
 }
