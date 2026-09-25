@@ -34,7 +34,7 @@
   background: linear-gradient(130deg, #1d7471, #0f5f5c);
   border-radius: 999px;
   padding: 10px 14px;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13px;
   letter-spacing: 0.2px;
 }
@@ -81,7 +81,7 @@
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.02em;
   background: #ffe7cc;
   color: #9a4d00;
@@ -138,7 +138,7 @@
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .staff-deposit-toggle input {
@@ -159,7 +159,7 @@
 .staff-booking-select span {
   font-size: 12px;
   text-transform: uppercase;
-  font-weight: 700;
+  font-weight: 600;
   color: rgba(18, 35, 34, 0.82);
   letter-spacing: 0.04em;
 }
@@ -180,7 +180,7 @@
 .staff-deposit-current {
   margin: 0;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   color: rgba(18, 35, 34, 0.88);
 }
 
@@ -207,7 +207,7 @@
   background: rgba(255, 255, 255, 0.75);
   padding: 10px 14px;
   border-radius: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .staff-link-secondary:hover {

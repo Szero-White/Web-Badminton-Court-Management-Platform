@@ -32,7 +32,7 @@
   border-radius: 999px;
   background: rgba(18, 35, 34, 0.08);
   color: #122322;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .tab-btn.active {
@@ -45,7 +45,7 @@
   border-radius: 12px;
   background: rgba(18, 35, 34, 0.08);
   color: #122322;
-  font-weight: 700;
+  font-weight: 600;
   width: 100%;
 }
 
@@ -64,7 +64,7 @@
   background: linear-gradient(120deg, #122322, #1d7471);
   padding: 10px 14px;
   border-radius: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .counter-back-link:hover {
@@ -102,7 +102,7 @@
   display: grid;
   gap: 6px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .counter-label select {
@@ -215,7 +215,7 @@
 
 .stock-low {
   color: #bf2d2d;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .row-action {
@@ -246,7 +246,7 @@
   border-radius: 10px;
   background: rgba(18, 35, 34, 0.08);
   color: #122322;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .quick-qty-btn.is-active {

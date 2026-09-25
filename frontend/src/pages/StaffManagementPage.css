@@ -22,7 +22,7 @@
 .staff-eyebrow {
   margin:0 0 6px!important;
   font-size:12px!important;
-  font-weight:700;
+  font-weight: 600;
   text-transform:uppercase;
   letter-spacing:.08em;
   color:#4f46e5!important
@@ -155,7 +155,7 @@
 }
 .staff-card dt {
   font-size:12px;
-  font-weight:700;
+  font-weight: 600;
   color:#98a2b3;
   text-transform:uppercase
 }

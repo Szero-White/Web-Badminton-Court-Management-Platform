@@ -13,7 +13,7 @@
 }
 
 .login-hero h1 {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--font-sans);
   font-size: 48px;
   letter-spacing: 2px;
   margin: 0 0 8px;
@@ -275,7 +275,7 @@
   border-radius: 10px;
   font: inherit;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }

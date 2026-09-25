@@ -12,7 +12,7 @@
   background: linear-gradient(120deg, #1d7471, #0f5f5c);
   padding: 10px 14px;
   border-radius: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .court-back-link:hover {
@@ -28,7 +28,7 @@
   display: grid;
   gap: 6px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .court-check {
@@ -80,12 +80,12 @@
 
 .court-state.active {
   color: #2f9e44;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .court-state.maintenance {
   color: #d9480f;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .court-state.stopped {

@@ -28,7 +28,7 @@
 .staff-date-controls > span {
   color: #667085;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .staff-date-shortcuts {
@@ -50,7 +50,7 @@
   border-color: transparent;
   background: linear-gradient(135deg, #1d7471, #2aa6a1);
   color: #fff;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .staff-selected-date {

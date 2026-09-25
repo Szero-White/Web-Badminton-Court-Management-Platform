@@ -1,0 +1,371 @@
+:root {
+  --font-sans: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --text-strong: #263938;
+  --text-primary: #3f504f;
+  --text-secondary: #63716f;
+  --text-muted: #83908e;
+
+  --surface: rgba(255, 255, 255, 0.9);
+  --surface-soft: rgba(255, 255, 255, 0.78);
+  --border-soft: rgba(18, 35, 34, 0.08);
+  --shadow-soft: 0 18px 44px rgba(18, 35, 34, 0.045);
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+}
+
+/* ---------- Global typography ---------- */
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-sans);
+}
+
+body {
+  color: var(--text-primary);
+  font-weight: var(--weight-regular);
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-strong);
+  font-family: var(--font-sans);
+  font-weight: var(--weight-semibold);
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+p {
+  line-height: 1.65;
+}
+
+strong,
+b {
+  font-weight: var(--weight-semibold);
+}
+
+small {
+  line-height: 1.5;
+}
+
+/* ---------- Brand / top navigation ---------- */
+
+.brand h1,
+.login-hero h1 {
+  font-family: var(--font-sans) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.035em !important;
+  text-transform: none;
+}
+
+.brand h1 {
+  font-size: clamp(24px, 2vw, 30px) !important;
+  line-height: 1.08;
+}
+
+.brand p {
+  color: var(--text-secondary);
+  opacity: 1;
+  font-size: 14px;
+}
+
+.brand-badge {
+  font-weight: 600;
+}
+
+nav a,
+.account-chip,
+.nav-logout-btn {
+  font-weight: 500 !important;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Main surfaces ---------- */
+
+.top-nav,
+.panel {
+  border-color: var(--border-soft);
+  box-shadow: var(--shadow-soft);
+}
+
+.panel {
+  padding: 24px;
+}
+
+.panel-header {
+  gap: 22px;
+}
+
+.panel h2,
+.panel-header h2 {
+  color: var(--text-strong);
+  font-size: clamp(25px, 2vw, 29px);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.panel h3,
+.panel-header h3 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.panel p {
+  color: var(--text-secondary);
+}
+
+/* ---------- Form controls ---------- */
+
+label,
+.counter-label,
+.login-form label {
+  color: var(--text-primary);
+  font-weight: 500 !important;
+}
+
+input,
+select,
+textarea {
+  color: var(--text-primary);
+  font-weight: 400;
+}
+
+button,
+a[class*="btn"],
+[class*="button"] {
+  font-weight: 500;
+}
+
+/* ---------- Tables / data density ---------- */
+
+table {
+  color: var(--text-primary);
+}
+
+table th {
+  color: var(--text-primary);
+  font-weight: 600 !important;
+  letter-spacing: -0.01em;
+}
+
+table td {
+  color: var(--text-primary);
+  font-weight: 400;
+}
+
+table td strong {
+  font-weight: 600;
+}
+
+/* ---------- Booking heatmap ---------- */
+
+.heatmap th,
+.heatmap td.time-cell {
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+}
+
+.court-header-content strong {
+  color: var(--text-primary);
+  font-weight: 600 !important;
+}
+
+.court-header-content small {
+  color: var(--text-muted) !important;
+  opacity: 1 !important;
+  font-weight: 400 !important;
+}
+
+.cell-button,
+.slot-button {
+  color: var(--text-secondary) !important;
+}
+
+.cell-price,
+.slot-button strong {
+  color: rgba(29, 116, 113, 0.9) !important;
+  font-weight: 600 !important;
+}
+
+.cell-label,
+.slot-button small {
+  color: #607472 !important;
+  opacity: 1 !important;
+  font-weight: 500 !important;
+}
+
+.booking-time,
+.booking-ref {
+  color: var(--text-secondary) !important;
+  opacity: 1 !important;
+  font-weight: 400 !important;
+}
+
+.booking-code {
+  font-weight: 600 !important;
+}
+
+/* ---------- Staff schedule ---------- */
+
+.staff-board-toolbar h3,
+.staff-selected-date strong {
+  font-weight: 600 !important;
+}
+
+.staff-date-controls > span {
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+}
+
+.staff-date-shortcuts button {
+  font-weight: 500 !important;
+}
+
+.staff-date-shortcuts button.is-active {
+  font-weight: 600 !important;
+}
+
+/* ---------- Beverage counter ---------- */
+
+.beverage-counter-page {
+  color: var(--text-primary);
+}
+
+.beverage-counter-page h2,
+.beverage-counter-page h3,
+.beverage-counter-page h4 {
+  font-weight: 600 !important;
+}
+
+.tab-btn,
+.tab-inline-btn,
+.counter-back-link,
+.quick-qty-btn {
+  font-weight: 500 !important;
+}
+
+.counter-check {
+  font-weight: 500 !important;
+}
+
+.counter-stats span {
+  color: var(--text-secondary);
+  opacity: 1;
+}
+
+.counter-stats strong {
+  color: var(--text-strong);
+  font-weight: 600 !important;
+}
+
+.counter-table-header p,
+.item-desc,
+.restock-hint {
+  color: var(--text-secondary);
+  opacity: 1;
+}
+
+.counter-table th {
+  font-weight: 600 !important;
+}
+
+.counter-table td {
+  font-weight: 400;
+}
+
+.stock-low {
+  font-weight: 600 !important;
+}
+
+/* ---------- Admin / management pages ---------- */
+
+.admin-overview-eyebrow,
+[class*="eyebrow"] {
+  font-weight: 600 !important;
+}
+
+.admin-navigation-card strong,
+.metric-card h3,
+.form-card h3 {
+  font-weight: 600 !important;
+}
+
+.admin-navigation-card p,
+.admin-section-heading p {
+  color: var(--text-secondary);
+}
+
+/* ---------- Transaction pages ---------- */
+
+.staff-transaction-page {
+  font-family: var(--font-sans) !important;
+}
+
+.staff-transaction-page h1,
+.staff-transaction-page h2,
+.staff-transaction-page h3,
+.transaction-header h1,
+.transaction-header h2 {
+  color: var(--text-strong) !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.025em;
+}
+
+.transaction-back-link,
+.transaction-form button {
+  font-weight: 500 !important;
+}
+
+/* ---------- Messages, chips and secondary text ---------- */
+
+.message {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.legend span,
+.auth-state,
+[class*="hint"],
+[class*="description"],
+[class*="subtitle"] {
+  font-weight: 400;
+}
+
+/* ---------- Responsive spacing ---------- */
+
+@media (max-width: 900px) {
+  .panel {
+    padding: 18px;
+  }
+
+  .top-nav {
+    padding: 16px;
+  }
+
+  .brand h1 {
+    font-size: 24px !important;
+  }
+}
