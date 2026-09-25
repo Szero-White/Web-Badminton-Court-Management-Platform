@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { bookingApi, adminApi } from '../services/api';
+import AppDatePicker from '../components/ui/AppDatePicker';
 
 function todayString() {
   const now = new Date();
@@ -25,7 +26,7 @@ export default function DashboardRevenuePage() {
       ]);
       setSlots(slotsRes.data?.data || []);
       setBeverages(beveragesRes.data?.data || []);
-      setMessage(`Dữ liệu ngày ${day} được tải thành công.`);
+      setMessage(`Dữ liệu ngày ${new Date(`${day}T00:00:00`).toLocaleDateString('vi-VN')} được tải thành công.`);
     } catch (error) {
       setMessage(error?.response?.data?.error?.message || 'Không thể tải dữ liệu.');
     } finally {
@@ -76,7 +77,7 @@ export default function DashboardRevenuePage() {
           <p>Xem doanh thu từ sân cầu lông & nước uống theo ngày.</p>
         </div>
         <div className="filters" style={{ margin: 0 }}>
-          <input type="date" value={day} onChange={(e) => setDay(e.target.value)} />
+          <AppDatePicker value={day} onChange={setDay} ariaLabel="Chọn ngày thống kê" />
           <button onClick={loadData} disabled={loading}>
             {loading ? 'Đang tải...' : 'Xem'}
           </button>

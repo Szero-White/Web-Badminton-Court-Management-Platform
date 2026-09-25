@@ -24,14 +24,12 @@ export default function StaffScheduleBoard({
 }) {
   return (
     <article className="staff-action-card staff-booking-board">
-      <div className="staff-board-toolbar">
-        <div>
-          <h3>Bảng sân theo giờ</h3>
-          <p>Bấm ô đã đặt để chọn booking, bấm ô trống để chọn giờ bắt đầu.</p>
-        </div>
-      </div>
-
-      <ScheduleDateNavigator value={viewDay} onChange={setViewDay} />
+      <ScheduleDateNavigator
+        value={viewDay}
+        onChange={setViewDay}
+        title="Bảng sân theo giờ"
+        description="Bấm ô đã đặt để chọn booking, bấm ô trống để mở hộp đặt sân."
+      />
 
       <div className="heatmap-wrapper staff-heatmap-wrap">
         <table className="heatmap staff-heatmap-table">

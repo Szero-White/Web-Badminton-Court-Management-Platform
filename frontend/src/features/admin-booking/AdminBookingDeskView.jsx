@@ -54,12 +54,12 @@ export default function AdminBookingDeskView({ vm }) {
       {message ? <p className="message" role="status">{message}</p> : null}
 
       <article className="admin-booking-desk-card admin-booking-desk-heatmap">
-        <div className="admin-booking-desk-heatmap-head">
-          <h3>Bảng sân theo giờ</h3>
-          <p>Bấm ô trống để mở hộp đặt sân; bấm ô đã đặt để xem và chỉnh sửa booking.</p>
-        </div>
-
-        <ScheduleDateNavigator value={day} onChange={setDay} />
+        <ScheduleDateNavigator
+          value={day}
+          onChange={setDay}
+          title="Bảng sân theo giờ"
+          description="Bấm ô trống để mở hộp đặt sân; bấm ô đã đặt để xem và chỉnh sửa booking."
+        />
 
         <div className="heatmap-wrapper admin-booking-desk-heatmap-wrap">
           {courts.length === 0 ? (

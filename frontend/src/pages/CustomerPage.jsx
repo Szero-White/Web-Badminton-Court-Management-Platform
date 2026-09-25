@@ -194,14 +194,14 @@ export default function CustomerPage() {
 
   return (
     <section className="panel customer customer-soft-layout">
-      <div className="panel-header customer-header">
-        <div className="customer-heading">
-          <span className="customer-eyebrow">Lịch theo ngày</span>
-          <h2>Bảng đặt sân & đồ uống</h2>
-          <p>Chọn ngày, lọc theo nhiều sân và nhấn trực tiếp vào ô trống để giữ chỗ nhanh.</p>
-        </div>
-
-        <div className="filters filters-wrap customer-toolbar">
+      <ScheduleDateNavigator
+        value={day}
+        onChange={setDay}
+        eyebrow="Lịch theo ngày"
+        title="Bảng đặt sân & đồ uống"
+        description="Chọn ngày, lọc theo nhiều sân và nhấn trực tiếp vào ô trống để giữ chỗ nhanh."
+      >
+        <div className="customer-schedule-tools">
           <MultiSelectDropdown
             label="Lọc theo sân"
             allLabel="Tất cả sân"
@@ -210,10 +210,13 @@ export default function CustomerPage() {
             selectedValues={selectedCourtIds}
             onChange={setSelectedCourtIds}
           />
+          <span className="customer-schedule-summary">
+            {selectedCourtIds.length === 0
+              ? `Đang hiển thị toàn bộ ${filteredCourts.length} sân`
+              : `Đang hiển thị ${filteredCourts.length} sân đã chọn`}
+          </span>
         </div>
-      </div>
-
-      <ScheduleDateNavigator value={day} onChange={setDay} />
+      </ScheduleDateNavigator>
 
       <div className="customer-status-stack">
         <p className="message soft-message">{message}</p>
@@ -276,7 +279,7 @@ export default function CustomerPage() {
                       <button
                         className="cell-button"
                         onClick={() => reserve(slot.id)}
-                        title={`${slot.price?.toLocaleString('vi-VN')} VND\nClick để đặt`}
+                        title={`${slot.price?.toLocaleString('vi-VN')} VND\nNhấn để đặt`}
                       >
                         <span className="cell-price">{slot.price?.toLocaleString('vi-VN', { maximumFractionDigits: 0 })}</span>
                         <span className="cell-label">Đặt</span>

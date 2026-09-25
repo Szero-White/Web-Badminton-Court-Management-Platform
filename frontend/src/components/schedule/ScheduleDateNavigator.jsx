@@ -1,11 +1,16 @@
+import AppDatePicker from '../ui/AppDatePicker';
 import { addDays, formatDateFull, formatDateLabel, todayString } from '../../utils/dateTime';
 import './ScheduleDateNavigator.css';
 
 export default function ScheduleDateNavigator({
   value,
   onChange,
+  title = '',
+  description = '',
+  eyebrow = '',
   shortcutDays = 7,
-  className = ''
+  className = '',
+  children = null
 }) {
   const shortcuts = Array.from({ length: shortcutDays }, (_, offset) => {
     const day = addDays(todayString(), offset);
@@ -14,29 +19,40 @@ export default function ScheduleDateNavigator({
 
   return (
     <div className={`schedule-date-nav ${className}`.trim()}>
-      <div className="schedule-date-nav-toolbar">
-        <span className="schedule-date-nav-label">Xem ngày:</span>
+      <div className="schedule-date-nav-head">
+        {(title || description || eyebrow) ? (
+          <div className="schedule-date-nav-heading">
+            {eyebrow ? <span className="schedule-date-nav-eyebrow">{eyebrow}</span> : null}
+            {title ? <h3>{title}</h3> : null}
+            {description ? <p>{description}</p> : null}
+          </div>
+        ) : null}
 
-        <div className="schedule-date-nav-shortcuts" aria-label="Chọn nhanh ngày">
-          {shortcuts.map(({ day, label }) => (
-            <button
-              key={day}
-              type="button"
-              className={value === day ? 'is-active' : ''}
-              onClick={() => onChange(day)}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="schedule-date-nav-toolbar">
+          <span className="schedule-date-nav-label">Xem ngày</span>
+
+          <div className="schedule-date-nav-controls">
+            <div className="schedule-date-nav-shortcuts" aria-label="Chọn nhanh ngày">
+              {shortcuts.map(({ day, label }) => (
+                <button
+                  key={day}
+                  type="button"
+                  className={value === day ? 'is-active' : ''}
+                  onClick={() => onChange(day)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <AppDatePicker
+              value={value}
+              onChange={onChange}
+              ariaLabel="Chọn ngày"
+              className="schedule-date-nav-input"
+            />
+          </div>
         </div>
-
-        <input
-          className="schedule-date-nav-input"
-          type="date"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          aria-label="Chọn ngày"
-        />
       </div>
 
       <div className="schedule-date-nav-banner">
@@ -46,10 +62,16 @@ export default function ScheduleDateNavigator({
         </div>
 
         <div className="schedule-date-nav-stepper">
-          <button type="button" onClick={() => onChange(addDays(value, -1))}>← Hôm qua</button>
-          <button type="button" onClick={() => onChange(addDays(value, 1))}>Ngày mai →</button>
+          <button type="button" onClick={() => onChange(addDays(value, -1))}>
+            ← Hôm qua
+          </button>
+          <button type="button" onClick={() => onChange(addDays(value, 1))}>
+            Ngày mai →
+          </button>
         </div>
       </div>
+
+      {children ? <div className="schedule-date-nav-footer">{children}</div> : null}
     </div>
   );
 }

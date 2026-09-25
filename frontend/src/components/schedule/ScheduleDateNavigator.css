@@ -1,40 +1,88 @@
 .schedule-date-nav {
   display: grid;
-  gap: 14px;
+  gap: 12px;
+}
+
+.schedule-date-nav-head {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  align-items: end;
+  gap: 24px;
+}
+
+.schedule-date-nav-heading {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.schedule-date-nav-eyebrow {
+  width: fit-content;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(29, 116, 113, 0.08);
+  color: rgba(29, 116, 113, 0.72);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.schedule-date-nav-heading h3 {
+  margin: 0;
+  color: rgba(34, 55, 53, 0.92);
+  font-size: clamp(22px, 2vw, 28px);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.schedule-date-nav-heading p {
+  margin: 0;
+  max-width: 720px;
+  color: rgba(34, 55, 53, 0.56);
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .schedule-date-nav-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
+  display: grid;
+  justify-items: end;
+  gap: 7px;
+  min-width: 0;
 }
 
 .schedule-date-nav-label {
-  color: rgba(34, 55, 53, 0.62);
-  font-size: 13px;
+  color: rgba(34, 55, 53, 0.52);
+  font-size: 11px;
   font-weight: 600;
-  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.schedule-date-nav-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .schedule-date-nav-shortcuts {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .schedule-date-nav-shortcuts button,
 .schedule-date-nav-stepper button {
-  min-height: 40px;
-  padding: 9px 13px;
-  border: 1px solid rgba(34, 55, 53, 0.13);
-  border-radius: 12px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid rgba(34, 55, 53, 0.11);
+  border-radius: 11px;
   background: #f8faf9;
-  color: rgba(34, 55, 53, 0.72);
+  color: rgba(34, 55, 53, 0.68);
   box-shadow: none;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -42,8 +90,8 @@
 .schedule-date-nav-stepper button:hover {
   transform: none;
   filter: none;
-  border-color: rgba(29, 116, 113, 0.3);
-  background: rgba(29, 116, 113, 0.06);
+  border-color: rgba(29, 116, 113, 0.26);
+  background: rgba(29, 116, 113, 0.05);
 }
 
 .schedule-date-nav-shortcuts button.is-active {
@@ -54,15 +102,7 @@
 }
 
 .schedule-date-nav-input {
-  width: 172px;
-  min-height: 40px;
-  padding: 8px 12px;
-  border: 1px solid rgba(34, 55, 53, 0.13);
-  border-radius: 12px;
-  background: #fff;
-  color: rgba(34, 55, 53, 0.78);
-  font-size: 13px;
-  font-weight: 500;
+  width: 176px;
 }
 
 .schedule-date-nav-banner {
@@ -70,63 +110,81 @@
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 13px 16px;
-  border-radius: 15px;
+  min-height: 64px;
+  padding: 11px 16px;
+  border-radius: 16px;
   background: linear-gradient(135deg, #1d7471, #31aaa2);
   color: #fff;
+  box-shadow: 0 8px 22px rgba(29, 116, 113, 0.1);
 }
 
 .schedule-date-nav-current,
 .schedule-date-nav-stepper {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
 }
 
 .schedule-date-nav-current strong {
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   text-transform: capitalize;
 }
 
 .schedule-date-nav-icon {
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1;
 }
 
 .schedule-date-nav-stepper button {
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
 .schedule-date-nav-stepper button:hover {
-  border-color: rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.46);
+  background: rgba(255, 255, 255, 0.13);
 }
 
-@media (max-width: 900px) {
+.schedule-date-nav-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+@media (max-width: 1200px) {
+  .schedule-date-nav-head {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
   .schedule-date-nav-toolbar {
+    justify-items: start;
+  }
+
+  .schedule-date-nav-controls {
     justify-content: flex-start;
   }
-
-  .schedule-date-nav-banner {
-    align-items: flex-start;
-    flex-direction: column;
-  }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 760px) {
   .schedule-date-nav-shortcuts {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .schedule-date-nav-shortcuts button,
+  .schedule-date-nav-controls,
   .schedule-date-nav-input {
     width: 100%;
+  }
+
+  .schedule-date-nav-banner {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .schedule-date-nav-stepper {

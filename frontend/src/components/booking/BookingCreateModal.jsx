@@ -12,6 +12,14 @@ const PAYMENT_METHOD_OPTIONS = [
   { value: 'cash', label: 'Tiền mặt' }
 ];
 
+function formatBookingDay(day) {
+  const [year, month, date] = String(day || '').split('-');
+  if (!year || !month || !date) {
+    return day || '-';
+  }
+  return `${date}/${month}/${year}`;
+}
+
 export default function BookingCreateModal({
   open,
   title,
@@ -119,14 +127,15 @@ export default function BookingCreateModal({
           </button>
         </header>
 
-        <div className="booking-modal-slot-summary" aria-label="Khung giờ đã chọn">
+        <div className="booking-modal-body">
+          <div className="booking-modal-slot-summary" aria-label="Khung giờ đã chọn">
           <article>
             <span>Sân</span>
             <strong>{selectedSlot.court_name || `Sân ${selectedSlot.court_id}`}</strong>
           </article>
           <article>
             <span>Ngày</span>
-            <strong>{day}</strong>
+            <strong>{formatBookingDay(day)}</strong>
           </article>
           <article>
             <span>Bắt đầu</span>
@@ -254,7 +263,8 @@ export default function BookingCreateModal({
               {loading ? 'Đang xử lý...' : 'Xác nhận đặt sân'}
             </button>
           </footer>
-        </form>
+          </form>
+        </div>
       </section>
     </div>
   );
