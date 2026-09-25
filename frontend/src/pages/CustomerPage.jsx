@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { beverageApi, bookingApi } from '../services/api';
 import CustomerBookingsPanel from '../features/customer/CustomerBookingsPanel';
 import MultiSelectDropdown from '../components/filters/MultiSelectDropdown';
+import ScheduleDateNavigator from '../components/schedule/ScheduleDateNavigator';
 import { todayString } from '../utils/dateTime';
 import './CustomerPage.css';
 
@@ -183,10 +184,13 @@ export default function CustomerPage() {
 
   useEffect(() => {
     loadCourts();
-    loadSlots();
     loadBeverages();
     loadBookings();
   }, []);
+
+  useEffect(() => {
+    loadSlots();
+  }, [day]);
 
   return (
     <section className="panel customer customer-soft-layout">
@@ -198,15 +202,6 @@ export default function CustomerPage() {
         </div>
 
         <div className="filters filters-wrap customer-toolbar">
-          <div className="toolbar-field">
-            <span className="toolbar-label">Ngày hoạt động</span>
-            <input type="date" value={day} onChange={(e) => setDay(e.target.value)} />
-          </div>
-
-          <button className="customer-primary-button" onClick={loadSlots} disabled={loading}>
-            {loading ? 'Đang tải...' : 'Xem lịch'}
-          </button>
-
           <MultiSelectDropdown
             label="Lọc theo sân"
             allLabel="Tất cả sân"
@@ -217,6 +212,8 @@ export default function CustomerPage() {
           />
         </div>
       </div>
+
+      <ScheduleDateNavigator value={day} onChange={setDay} />
 
       <div className="customer-status-stack">
         <p className="message soft-message">{message}</p>

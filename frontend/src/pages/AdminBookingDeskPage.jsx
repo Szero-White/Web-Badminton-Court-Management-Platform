@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { adminApi, bookingApi } from '../services/api';
 import { formatDayInput } from '../utils/dateTime';
-import { buildHeatmapGrid, findBookingGroupForSlot, groupBookedSlots } from '../utils/bookingGrid';
+import { buildHeatmapGrid, findBookingGroupForSlot, getAvailableRangeEndSlots, groupBookedSlots } from '../utils/bookingGrid';
+import { buildDepositNote, formatMoney, paymentMethodLabel } from '../utils/formatters';
 import AdminBookingDeskView from '../features/admin-booking/AdminBookingDeskView';
 import './AdminBookingDeskPage.css';
 
@@ -16,11 +17,15 @@ export default function AdminBookingDeskPage() {
   // Booking form state
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [bookingData, setBookingData] = useState({
+    endTimeSlotId: 'single',
     customerName: '',
     customerPhone: '',
     customerType: 'walk_in',
     notes: '',
-    deposit: 0
+    collectDeposit: false,
+    depositAmount: '',
+    depositMethod: 'transfer',
+    depositReference: ''
   });
 
   // Booking edit form
@@ -83,6 +88,10 @@ export default function AdminBookingDeskPage() {
     return map;
   }, [bookingGroups]);
 
+  const endSlots = useMemo(
+    () => getAvailableRangeEndSlots(slots, selectedSlot),
+    [slots, selectedSlot]
+  );
 
   async function loadData() {
     setLoading(true);
@@ -137,12 +146,17 @@ export default function AdminBookingDeskPage() {
       setSelectedSlot(slot);
       setShowBookingForm(true);
       setBookingData({
+        endTimeSlotId: 'single',
         customerName: '',
         customerPhone: '',
         customerType: 'walk_in',
         notes: '',
-        deposit: 0
+        collectDeposit: false,
+        depositAmount: '',
+        depositMethod: 'transfer',
+        depositReference: ''
       });
+      setMessage(`Đã chọn ${slot.court_name || `Sân ${slot.court_id}`} lúc ${new Date(slot.start_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })}.`);
     }
   }
 
@@ -152,28 +166,76 @@ export default function AdminBookingDeskPage() {
       setMessage('Vui lòng nhập đầy đủ tên và số điện thoại.');
       return;
     }
-    const deposit = Math.round(Number(bookingData.deposit) || 0);
-    if (deposit < 0 || deposit > Number(selectedSlot.price || 0)) {
-      setMessage('Tiền cọc phải từ 0 đến giá trị của khung giờ.');
+
+    const depositEnabled = Boolean(bookingData.collectDeposit);
+    const depositAmount = Math.round(Number(bookingData.depositAmount || 0));
+    if (depositEnabled && (!Number.isFinite(depositAmount) || depositAmount <= 0)) {
+      setMessage('Nếu chọn cọc trước, vui lòng nhập số tiền cọc hợp lệ.');
       return;
     }
 
+    const composedNote = depositEnabled
+      ? buildDepositNote(bookingData.notes, depositAmount, bookingData.depositMethod, bookingData.depositReference)
+      : bookingData.notes.trim();
+
+    const isSingleSlot = !bookingData.endTimeSlotId || bookingData.endTimeSlotId === 'single';
+    const payload = {
+      customer_name: bookingData.customerName.trim(),
+      customer_phone: bookingData.customerPhone.trim(),
+      customer_type: bookingData.customerType,
+      notes: composedNote,
+      ...(isSingleSlot
+        ? { time_slot_id: Number(selectedSlot.id) }
+        : {
+            start_time_slot_id: Number(selectedSlot.id),
+            end_time_slot_id: Number(bookingData.endTimeSlotId)
+          })
+    };
+
     setLoading(true);
     try {
-      const response = await adminApi.createBooking({
-        time_slot_id: selectedSlot.id,
-        customer_name: bookingData.customerName.trim(),
-        customer_phone: bookingData.customerPhone.trim(),
-        customer_type: bookingData.customerType,
-        notes: bookingData.notes.trim()
-      });
-      const booking = response.data?.data;
-      if (deposit > 0 && booking?.id) {
-        await bookingApi.confirmDeposit(booking.id, { amount: deposit, method: 'cash', reference: '' });
+      const response = await adminApi.createBooking(payload);
+      const responseData = response.data?.data;
+      const bookings = responseData?.bookings || (responseData ? [responseData] : []);
+      const bookingCode = bookings[0]?.booking_code || 'booking';
+
+      let deposited = 0;
+      if (depositEnabled && bookings.length > 0) {
+        let remaining = depositAmount;
+        for (const booking of bookings) {
+          if (!booking?.id || remaining <= 0) continue;
+
+          const cap = Number(booking.remaining_due ?? booking.total_price ?? 0);
+          const amountToPay = Math.min(remaining, cap > 0 ? cap : remaining);
+          if (amountToPay <= 0) continue;
+
+          await bookingApi.confirmDeposit(booking.id, {
+            amount: amountToPay,
+            method: bookingData.depositMethod,
+            reference: bookingData.depositReference?.trim() || ''
+          });
+          deposited += amountToPay;
+          remaining -= amountToPay;
+        }
       }
-      setMessage('Đặt sân thành công.');
+
+      const depositMsg = deposited > 0
+        ? ` Đã ghi nhận cọc ${formatMoney(deposited)} VND (${paymentMethodLabel(bookingData.depositMethod)}).`
+        : '';
+      setMessage(`Đặt sân thành công. Mã booking: ${bookingCode}.${depositMsg}`);
       setShowBookingForm(false);
       setSelectedSlot(null);
+      setBookingData({
+        endTimeSlotId: 'single',
+        customerName: '',
+        customerPhone: '',
+        customerType: 'walk_in',
+        notes: '',
+        collectDeposit: false,
+        depositAmount: '',
+        depositMethod: 'transfer',
+        depositReference: ''
+      });
       await loadData();
     } catch (error) {
       setMessage(error?.response?.data?.error?.message || 'Không thể tạo booking.');
@@ -237,5 +299,5 @@ export default function AdminBookingDeskPage() {
     }
   }
 
-  return <AdminBookingDeskView vm={{ day, setDay, slots, loading, message, selectedSlot, setSelectedSlot, selectedBookingKey, setSelectedBookingKey, showBookingForm, setShowBookingForm, bookingData, setBookingData, bookingEditForm, setBookingEditForm, isEditingBooking, setIsEditingBooking, courts, heatmapGrid, bookingGroups, selectedBooking, selectedBookingSlotIds, groupInfoBySlotId, loadData, handleCellClick, handleCreateBooking, handleUpdateBooking, handleDeleteBooking }} />;
+  return <AdminBookingDeskView vm={{ day, setDay, slots, loading, message, selectedSlot, setSelectedSlot, selectedBookingKey, setSelectedBookingKey, showBookingForm, setShowBookingForm, bookingData, setBookingData, bookingEditForm, setBookingEditForm, isEditingBooking, setIsEditingBooking, courts, heatmapGrid, bookingGroups, selectedBooking, selectedBookingSlotIds, groupInfoBySlotId, endSlots, loadData, handleCellClick, handleCreateBooking, handleUpdateBooking, handleDeleteBooking }} />;
 }

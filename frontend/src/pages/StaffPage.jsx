@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { bookingApi, staffApi } from '../services/api';
 import { formatTime, slotMinuteOfDay, todayString } from '../utils/dateTime';
-import { buildHeatmapGrid, compareSlotTime, findBookingGroupForSlot, groupBookedSlots } from '../utils/bookingGrid';
-import { buildDepositNote, formatMoney } from '../utils/formatters';
+import { buildHeatmapGrid, compareSlotTime, findBookingGroupForSlot, getAvailableRangeEndSlots, groupBookedSlots } from '../utils/bookingGrid';
+import { buildDepositNote, formatMoney, paymentMethodLabel } from '../utils/formatters';
 import StaffOperationsView from '../features/staff/StaffOperationsView';
 import './StaffPage.css';
 import './StaffScheduleBoard.css';
@@ -15,11 +15,12 @@ export default function StaffPage() {
   const [checkinFeed, setCheckinFeed] = useState([]);
   const [selectedBookingKey, setSelectedBookingKey] = useState(null);
   const [depositEdit, setDepositEdit] = useState({ amount: '', method: 'transfer', reference: '' });
-  
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
+
   const [bookingForm, setBookingForm] = useState({
     day: todayString(),
     startTimeSlotId: '',
-    endTimeSlotId: '',
+    endTimeSlotId: 'single',
     customerPhone: '',
     customerName: '',
     customerType: 'walk_in',
@@ -118,18 +119,10 @@ export default function StaffPage() {
     [sortedSlots, bookingForm.startTimeSlotId]
   );
 
-  const endSlots = useMemo(() => {
-    if (!selectedStartSlot) {
-      return [];
-    }
-
-    return sortedSlots.filter((slot) => {
-      if (Number(slot.court_id) !== Number(selectedStartSlot.court_id)) {
-        return false;
-      }
-      return new Date(slot.start_time).getTime() > new Date(selectedStartSlot.start_time).getTime() && !slot.booked;
-    });
-  }, [sortedSlots, selectedStartSlot]);
+  const endSlots = useMemo(
+    () => getAvailableRangeEndSlots(sortedSlots, selectedStartSlot),
+    [sortedSlots, selectedStartSlot]
+  );
 
   function handleDeskCellClick(slot) {
     if (!slot) {
@@ -143,10 +136,12 @@ export default function StaffPage() {
 
     setBookingForm((prev) => ({
       ...prev,
+      day: viewDay,
       startTimeSlotId: String(slot.id),
-      endTimeSlotId: ''
+      endTimeSlotId: 'single'
     }));
-    setMessage(`Đã chọn slot trống ${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}.`);
+    setBookingDialogOpen(true);
+    setMessage(`Đã chọn ${slot.court_name || `Sân ${slot.court_id}`} lúc ${formatTime(slot.start_time)}.`);
   }
 
   async function loadSlots(day) {
@@ -217,13 +212,8 @@ export default function StaffPage() {
 
   async function createBookingForCustomer(e) {
     e.preventDefault();
-    if (!bookingForm.startTimeSlotId || !bookingForm.endTimeSlotId || !bookingForm.customerPhone || !bookingForm.customerName.trim()) {
-      setMessage('Vui lòng chọn giờ bắt đầu, giờ kết thúc, nhập SĐT và tên khách.');
-      return;
-    }
-
-    if (String(bookingForm.startTimeSlotId) === String(bookingForm.endTimeSlotId)) {
-      setMessage('Giờ kết thúc phải lớn hơn giờ bắt đầu.');
+    if (!bookingForm.startTimeSlotId || !bookingForm.customerPhone.trim() || !bookingForm.customerName.trim()) {
+      setMessage('Vui lòng nhập đầy đủ số điện thoại và tên khách.');
       return;
     }
 
@@ -238,61 +228,67 @@ export default function StaffPage() {
       ? buildDepositNote(bookingForm.notes, depositAmount, bookingForm.depositMethod, bookingForm.depositReference)
       : bookingForm.notes.trim();
 
+    const isSingleSlot = !bookingForm.endTimeSlotId || bookingForm.endTimeSlotId === 'single';
+    const payload = {
+      customer_phone: bookingForm.customerPhone.trim(),
+      customer_name: bookingForm.customerName.trim(),
+      customer_type: bookingForm.customerType,
+      notes: composedNote,
+      ...(isSingleSlot
+        ? { time_slot_id: Number(bookingForm.startTimeSlotId) }
+        : {
+            start_time_slot_id: Number(bookingForm.startTimeSlotId),
+            end_time_slot_id: Number(bookingForm.endTimeSlotId)
+          })
+    };
+
+    setLoading(true);
     try {
-      const res = await staffApi.createBookingForCustomer({
-        start_time_slot_id: Number(bookingForm.startTimeSlotId),
-        end_time_slot_id: Number(bookingForm.endTimeSlotId),
-        customer_phone: bookingForm.customerPhone,
-        customer_name: bookingForm.customerName.trim(),
-        customer_type: bookingForm.customerType,
-        notes: composedNote
-      });
-      const payload = res.data?.data;
-      const bookings = payload?.bookings || (payload ? [payload] : []);
+      const res = await staffApi.createBookingForCustomer(payload);
+      const responseData = res.data?.data;
+      const bookings = responseData?.bookings || (responseData ? [responseData] : []);
       const bookingCode = bookings[0]?.booking_code || 'booking';
 
       let deposited = 0;
       if (depositEnabled && bookings.length > 0) {
         let remaining = depositAmount;
         for (const booking of bookings) {
-          if (!booking?.id || remaining <= 0) {
-            continue;
-          }
+          if (!booking?.id || remaining <= 0) continue;
 
           const cap = Number(booking.remaining_due ?? booking.total_price ?? 0);
           const amountToPay = Math.min(remaining, cap > 0 ? cap : remaining);
-          if (amountToPay <= 0) {
-            continue;
-          }
+          if (amountToPay <= 0) continue;
 
           await bookingApi.confirmDeposit(booking.id, {
             amount: amountToPay,
             method: bookingForm.depositMethod,
             reference: bookingForm.depositReference?.trim() || ''
           });
-
           deposited += amountToPay;
           remaining -= amountToPay;
         }
       }
 
       const startLabel = selectedStartSlot ? formatTime(selectedStartSlot.start_time) : '';
-      const endLabel = endSlots.find((slot) => String(slot.id) === String(bookingForm.endTimeSlotId))
-        ? formatTime(endSlots.find((slot) => String(slot.id) === String(bookingForm.endTimeSlotId)).start_time)
-        : '';
+      const selectedEndSlot = endSlots.find((slot) => String(slot.id) === String(bookingForm.endTimeSlotId));
+      const endLabel = isSingleSlot
+        ? (selectedStartSlot ? formatTime(selectedStartSlot.end_time) : '')
+        : (selectedEndSlot ? formatTime(selectedEndSlot.start_time) : '');
       const depositMsg = deposited > 0
         ? ` Đã ghi nhận cọc ${formatMoney(deposited)} VND (${paymentMethodLabel(bookingForm.depositMethod)}).`
         : '';
+
       setMessage(
         bookings.length > 1
-          ? `Đã tạo ${bookings.length} slot booking cho khách ${bookingForm.customerPhone} (${startLabel} - ${endLabel}). Mã đầu tiên: ${bookingCode}.${depositMsg}`
-          : `Đã tạo booking ${bookingCode} cho khách ${bookingForm.customerPhone}.${depositMsg}`
+          ? `Đã tạo ${bookings.length} slot booking (${startLabel} - ${endLabel}). Mã đầu tiên: ${bookingCode}.${depositMsg}`
+          : `Đã tạo booking ${bookingCode} (${startLabel} - ${endLabel}).${depositMsg}`
       );
       localStorage.setItem('last_booking_day', bookingForm.day);
+      setBookingDialogOpen(false);
       setBookingForm((prev) => ({
         ...prev,
         startTimeSlotId: '',
-        endTimeSlotId: '',
+        endTimeSlotId: 'single',
         customerPhone: '',
         customerName: '',
         customerType: 'walk_in',
@@ -305,6 +301,8 @@ export default function StaffPage() {
       await loadSlots(viewDay);
     } catch (error) {
       setMessage(error?.response?.data?.error?.message || 'Không tạo được booking cho khách.');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -312,5 +310,5 @@ export default function StaffPage() {
     loadSlots(viewDay);
   }, [viewDay]);
 
-  return <StaffOperationsView vm={{ message, loading, checkInCode, setCheckInCode, lastCheckin, checkinFeed, selectedBookingKey, setSelectedBookingKey, depositEdit, setDepositEdit, bookingForm, setBookingForm, viewDay, setViewDay, courtColumns, heatmapGrid, groupedSlotsByCourt, bookingGroups, selectedBooking, selectedBookingSlotIds, groupInfoBySlotId, selectedStartSlot, endSlots, handleDeskCellClick, loadSlots, confirmSelectedDeposit, doCheckin, createBookingForCustomer }} />;
+  return <StaffOperationsView vm={{ message, loading, checkInCode, setCheckInCode, lastCheckin, checkinFeed, selectedBookingKey, setSelectedBookingKey, depositEdit, setDepositEdit, bookingDialogOpen, setBookingDialogOpen, bookingForm, setBookingForm, viewDay, setViewDay, courtColumns, heatmapGrid, bookingGroups, selectedBooking, selectedBookingSlotIds, groupInfoBySlotId, selectedStartSlot, endSlots, handleDeskCellClick, confirmSelectedDeposit, doCheckin, createBookingForCustomer }} />;
 }

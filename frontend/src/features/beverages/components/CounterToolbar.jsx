@@ -1,12 +1,14 @@
+import AppSelect from '../../../components/ui/AppSelect';
+
 const SHIFT_OPTIONS = [
-  ['morning', 'Ca sáng'],
-  ['afternoon', 'Ca chiều'],
-  ['evening', 'Ca tối']
+  { value: 'morning', label: 'Ca sáng' },
+  { value: 'afternoon', label: 'Ca chiều' },
+  { value: 'evening', label: 'Ca tối' }
 ];
 
 const PAYMENT_OPTIONS = [
-  ['cash', 'Tiền mặt'],
-  ['transfer', 'Chuyển khoản']
+  { value: 'cash', label: 'Tiền mặt' },
+  { value: 'transfer', label: 'Chuyển khoản' }
 ];
 
 function MoneyStat({ label, value, highlight = false }) {
@@ -37,24 +39,18 @@ export default function CounterToolbar({
     <div className="counter-toolbar split-layout">
       <div className="counter-toolbar-main">
         <div className="counter-toolbar-row">
-          <label className="counter-label">
-            Ca làm việc
-            <select value={shift} onChange={(event) => setShift(event.target.value)}>
-              {SHIFT_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>
-          <label className="counter-label">
-            Thanh toán bán hàng
-            <select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}>
-              {PAYMENT_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>
-          <label className="counter-label">
-            Thanh toán nhập hàng
-            <select value={restockPaymentMethod} onChange={(event) => setRestockPaymentMethod(event.target.value)}>
-              {PAYMENT_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>
+          <div className="counter-label">
+            <span>Ca làm việc</span>
+            <AppSelect value={shift} onChange={setShift} options={SHIFT_OPTIONS} ariaLabel="Ca làm việc" />
+          </div>
+          <div className="counter-label">
+            <span>Thanh toán bán hàng</span>
+            <AppSelect value={paymentMethod} onChange={setPaymentMethod} options={PAYMENT_OPTIONS} ariaLabel="Thanh toán bán hàng" />
+          </div>
+          <div className="counter-label">
+            <span>Thanh toán nhập hàng</span>
+            <AppSelect value={restockPaymentMethod} onChange={setRestockPaymentMethod} options={PAYMENT_OPTIONS} ariaLabel="Thanh toán nhập hàng" />
+          </div>
           <label className="counter-label counter-grow">
             Tìm nhanh
             <input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Tên nước hoặc mô tả" />
@@ -78,7 +74,7 @@ export default function CounterToolbar({
 
       <aside className="shift-summary-panel">
         <div className="shift-summary-head">
-          <div><span>Tổng kết ca</span><strong>{SHIFT_OPTIONS.find(([value]) => value === shift)?.[1] || shift}</strong></div>
+          <div><span>Tổng kết ca</span><strong>{SHIFT_OPTIONS.find((option) => option.value === shift)?.label || shift}</strong></div>
           {summaryLoading ? <small>Đang cập nhật...</small> : null}
         </div>
         <div className="shift-summary-grid">

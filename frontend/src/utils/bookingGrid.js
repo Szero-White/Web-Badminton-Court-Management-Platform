@@ -86,3 +86,31 @@ export function buildHeatmapGrid(slots = [], courts = []) {
     cells: courts.map((court) => slotMap.get(`${court.courtId}|${time}`) || null)
   }));
 }
+
+export function getAvailableRangeEndSlots(slots = [], selectedStartSlot) {
+  if (!selectedStartSlot) return [];
+
+  const sameCourt = [...slots]
+    .filter((slot) => Number(slot.court_id) === Number(selectedStartSlot.court_id))
+    .sort(compareSlotTime);
+
+  const startIndex = sameCourt.findIndex((slot) => String(slot.id) === String(selectedStartSlot.id));
+  if (startIndex < 0) return [];
+
+  const result = [];
+  let expectedStart = new Date(selectedStartSlot.end_time).getTime();
+
+  for (let index = startIndex + 1; index < sameCourt.length; index += 1) {
+    const slot = sameCourt[index];
+    const slotStart = new Date(slot.start_time).getTime();
+
+    if (slotStart !== expectedStart || slot.booked) {
+      break;
+    }
+
+    result.push(slot);
+    expectedStart = new Date(slot.end_time).getTime();
+  }
+
+  return result;
+}

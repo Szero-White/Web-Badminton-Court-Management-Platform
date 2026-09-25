@@ -310,3 +310,12 @@ button:hover {
 .legend-drink {
   background: var(--sun);
 }
+
+/* operations-v5-background */
+body {
+  background: #f7f4ee;
+}
+
+.ambient {
+  display: none !important;
+}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { adminApi } from '../services/api';
+import AppSelect from '../components/ui/AppSelect';
 import './StaffManagementPage.css';
 
 const EMPTY_FORM = { full_name: '', email: '', phone: '', password: '', role: 'staff' };
@@ -18,7 +19,7 @@ function StaffForm({ editingId, form, onChange, onSubmit, onCancel }) {
         <label>Họ và tên<input value={form.full_name} onChange={(e) => onChange('full_name', e.target.value)} required /></label>
         <label>Email<input type="email" value={form.email} onChange={(e) => onChange('email', e.target.value)} required /></label>
         <label>Số điện thoại<input value={form.phone} onChange={(e) => onChange('phone', e.target.value)} required /></label>
-        <label>Vai trò<select value={form.role} onChange={(e) => onChange('role', e.target.value)}><option value="staff">Nhân viên</option><option value="admin">Quản trị viên</option></select></label>
+        <div className="staff-form-select-field"><span>Vai trò</span><AppSelect value={form.role} onChange={(value) => onChange('role', value)} options={[{ value: 'staff', label: 'Nhân viên' }, { value: 'admin', label: 'Quản trị viên' }]} ariaLabel="Vai trò" /></div>
         <label className="staff-form-password">Mật khẩu<input type="password" minLength={editingId ? undefined : 8} value={form.password} onChange={(e) => onChange('password', e.target.value)} required={!editingId} placeholder={editingId ? 'Để trống nếu không đổi' : 'Tối thiểu 8 ký tự'} /><small>{editingId ? 'Chỉ nhập khi cần thay đổi mật khẩu.' : 'Mật khẩu phải có ít nhất 8 ký tự.'}</small></label>
         <div className="staff-form-actions"><button type="button" className="btn-secondary" onClick={onCancel}>Hủy</button><button type="submit" className="btn-primary">{editingId ? 'Lưu thay đổi' : 'Tạo tài khoản'}</button></div>
       </form>

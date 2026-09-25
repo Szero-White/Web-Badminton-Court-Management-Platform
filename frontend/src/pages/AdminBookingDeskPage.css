@@ -28,31 +28,6 @@
   flex-wrap: wrap;
 }
 
-.admin-booking-desk-day {
-  margin-top: 14px;
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-}
-
-.admin-booking-desk-day label {
-  display: grid;
-  gap: 8px;
-}
-
-.admin-booking-desk-day span {
-  font-size: 12px;
-  text-transform: uppercase;
-  font-weight: 600;
-  color: rgba(18, 35, 34, 0.82);
-  letter-spacing: 0.04em;
-}
-
-.admin-booking-desk-day input {
-  min-width: 220px;
-}
-
 .admin-booking-desk-grid {
   margin-top: 16px;
   display: grid;
@@ -62,6 +37,10 @@
 
 .admin-booking-desk-heatmap {
   margin-top: 16px;
+}
+
+.admin-booking-desk-heatmap .schedule-date-nav {
+  margin-top: 14px;
 }
 
 .admin-booking-desk-heatmap-head p {
@@ -254,12 +233,4 @@
     grid-template-columns: 1fr;
   }
 
-  .admin-booking-desk-day {
-    align-items: stretch;
-  }
-
-  .admin-booking-desk-day input,
-  .admin-booking-desk-day button {
-    width: 100%;
-  }
 }

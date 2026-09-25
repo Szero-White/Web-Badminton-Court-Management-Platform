@@ -108,6 +108,10 @@
   box-shadow: 0 18px 30px rgba(29, 116, 113, 0.17);
 }
 
+
+.customer-soft-layout > .schedule-date-nav {
+  margin-top: 2px;
+}
 .customer-status-stack {
   display: grid;
   gap: 10px;

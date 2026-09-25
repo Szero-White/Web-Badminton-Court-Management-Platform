@@ -1,3 +1,5 @@
+import AppSelect from '../../../components/ui/AppSelect';
+
 export default function TransactionForms({
   saleForm,
   setSaleForm,
@@ -77,19 +79,21 @@ export default function TransactionForms({
         <form onSubmit={onRefundSubmit}>
           <div className="form-group">
             <label>Lý do *</label>
-            <select
+            <AppSelect
               value={refundForm.description}
-              onChange={(event) => setRefundForm({ ...refundForm, description: event.target.value })}
-              required
-            >
-              <option value="">-- Chọn lý do --</option>
-              <option value="wrong_entry">❌ Nhập nhầm</option>
-              <option value="customer_return">🔄 Khách trả lại nước</option>
-              <option value="booking_cancel">📅 Hủy lịch đặt sân</option>
-              <option value="damaged">💔 Hàng hỏng/lỗi</option>
-              <option value="adjustment">⚙️ Điều chỉnh</option>
-              <option value="other">📝 Khác</option>
-            </select>
+              onChange={(value) => setRefundForm({ ...refundForm, description: value })}
+              placeholder="Chọn lý do"
+              ariaLabel="Lý do hoàn tiền"
+              options={[
+                { value: '', label: 'Chọn lý do' },
+                { value: 'wrong_entry', label: 'Nhập nhầm' },
+                { value: 'customer_return', label: 'Khách trả lại nước' },
+                { value: 'booking_cancel', label: 'Hủy lịch đặt sân' },
+                { value: 'damaged', label: 'Hàng hỏng / lỗi' },
+                { value: 'adjustment', label: 'Điều chỉnh' },
+                { value: 'other', label: 'Khác' }
+              ]}
+            />
           </div>
           <div className="form-group">
             <label>Số tiền hoàn (₫) *</label>

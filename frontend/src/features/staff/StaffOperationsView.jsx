@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import StaffBookingForm from './components/StaffBookingForm';
+import BookingCreateModal from '../../components/booking/BookingCreateModal';
 import StaffCheckinPanel from './components/StaffCheckinPanel';
 import StaffDepositEditor from './components/StaffDepositEditor';
 import StaffScheduleBoard from './components/StaffScheduleBoard';
@@ -29,15 +29,6 @@ export default function StaffOperationsView({ vm }) {
       />
 
       <div className="staff-action-grid">
-        <StaffBookingForm
-          bookingForm={vm.bookingForm}
-          setBookingForm={vm.setBookingForm}
-          groupedSlotsByCourt={vm.groupedSlotsByCourt}
-          selectedStartSlot={vm.selectedStartSlot}
-          endSlots={vm.endSlots}
-          loadSlots={vm.loadSlots}
-          onSubmit={vm.createBookingForCustomer}
-        />
         <StaffCheckinPanel
           checkInCode={vm.checkInCode}
           setCheckInCode={vm.setCheckInCode}
@@ -60,6 +51,19 @@ export default function StaffOperationsView({ vm }) {
         <Link to="/staff/beverage-counter" className="staff-link-secondary">Mở bảng bán/nhập nước</Link>
         <Link to="/staff/transactions" className="staff-link-secondary">Mở sổ thu chi ca</Link>
       </div>
+
+      <BookingCreateModal
+        open={vm.bookingDialogOpen}
+        title="Đặt sân cho khách"
+        selectedSlot={vm.selectedStartSlot}
+        day={vm.viewDay}
+        endSlots={vm.endSlots}
+        form={vm.bookingForm}
+        setForm={vm.setBookingForm}
+        loading={vm.loading}
+        onSubmit={vm.createBookingForCustomer}
+        onClose={() => vm.setBookingDialogOpen(false)}
+      />
     </section>
   );
 }

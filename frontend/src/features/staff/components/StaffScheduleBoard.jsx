@@ -1,4 +1,5 @@
-import { addDays, formatDateFull, formatDateLabel, formatTime, todayString } from '../../../utils/dateTime';
+import ScheduleDateNavigator from '../../../components/schedule/ScheduleDateNavigator';
+import { formatTime } from '../../../utils/dateTime';
 
 function buildBookingNote(group) {
   if (!group) return '';
@@ -28,29 +29,9 @@ export default function StaffScheduleBoard({
           <h3>Bảng sân theo giờ</h3>
           <p>Bấm ô đã đặt để chọn booking, bấm ô trống để chọn giờ bắt đầu.</p>
         </div>
-        <div className="staff-date-controls">
-          <span>Xem ngày:</span>
-          <div className="staff-date-shortcuts">
-            {[0, 1, 2, 3, 4, 5, 6].map((offset) => {
-              const day = addDays(todayString(), offset);
-              return (
-                <button key={day} type="button" className={viewDay === day ? 'is-active' : ''} onClick={() => setViewDay(day)}>
-                  {formatDateLabel(day)}
-                </button>
-              );
-            })}
-          </div>
-          <input type="date" value={viewDay} onChange={(event) => setViewDay(event.target.value)} />
-        </div>
       </div>
 
-      <div className="staff-selected-date">
-        <div><span aria-hidden="true">📅</span><strong>{formatDateFull(viewDay)}</strong></div>
-        <div>
-          <button type="button" onClick={() => setViewDay(addDays(viewDay, -1))}>← Hôm qua</button>
-          <button type="button" onClick={() => setViewDay(addDays(viewDay, 1))}>Ngày mai →</button>
-        </div>
-      </div>
+      <ScheduleDateNavigator value={viewDay} onChange={setViewDay} />
 
       <div className="heatmap-wrapper staff-heatmap-wrap">
         <table className="heatmap staff-heatmap-table">
