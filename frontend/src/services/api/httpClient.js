@@ -1,3 +1,4 @@
+import { localizeApiMessage } from '../../utils/apiErrorMessage';
 import axios from 'axios';
 
 const baseURL = import.meta.env.VITE_API_URL || '/api/v1';
@@ -41,6 +42,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const apiMessage = error?.response?.data?.error?.message;
+    if (apiMessage) {
+      error.response.data.error = {
+        ...error.response.data.error,
+        message: localizeApiMessage(apiMessage)
+      };
+    }
+
     const originalRequest = error?.config;
     const isAuthEndpoint = originalRequest?.url?.includes('/auth/login') || originalRequest?.url?.includes('/auth/refresh');
     if (!originalRequest || error?.response?.status !== 401 || isAuthEndpoint || originalRequest._retry) return Promise.reject(error);
