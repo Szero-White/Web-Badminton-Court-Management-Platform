@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { beverageApi, bookingApi } from '../services/api';
 import CustomerBookingsPanel from '../features/customer/CustomerBookingsPanel';
+import MultiSelectDropdown from '../components/filters/MultiSelectDropdown';
 import { todayString } from '../utils/dateTime';
+import './CustomerPage.css';
 
 export default function CustomerPage() {
   const [day, setDay] = useState(todayString());
@@ -9,7 +11,7 @@ export default function CustomerPage() {
   const [courtCatalog, setCourtCatalog] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('Chọn ngày để xem bảng lịch đặt sân.');
-  const [selectedCourt, setSelectedCourt] = useState('all');
+  const [selectedCourtIds, setSelectedCourtIds] = useState([]);
   const [beverages, setBeverages] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [bookingsLoading, setBookingsLoading] = useState(false);
@@ -23,16 +25,57 @@ export default function CustomerPage() {
     return `${hh}:${mm}`;
   }
 
-  const drinks = [
-    { name: 'Nước suối', price: 10000, note: 'Giải khát nhanh' },
-    { name: 'Trà chanh', price: 20000, note: 'Mát lạnh sau trận đấu' },
-    { name: 'Nước điện giải', price: 25000, note: 'Bù khoáng, hồi phục' },
-    { name: 'Cà phê đá', price: 22000, note: 'Nạp tỉnh táo trước giờ chơi' }
+  function formatTime(value) {
+    return new Date(value).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  }
+
+  const fallbackBeverages = [
+    { name: 'Nước suối', price: 10000, note: 'Nước uống đóng chai' },
+    { name: 'Nước điện giải', price: 20000, note: 'Bổ sung điện giải sau khi chơi' },
+    { name: 'Khăn lạnh', price: 5000, note: 'Khăn lạnh dùng tại sân' }
   ];
 
   const courts = useMemo(() => {
     return [...courtCatalog].sort((a, b) => a.id - b.id);
   }, [courtCatalog]);
+
+  useEffect(() => {
+    setSelectedCourtIds((previous) => previous.filter((courtId) => courts.some((court) => String(court.id) === String(courtId))));
+  }, [courts]);
+
+  const courtFilterOptions = useMemo(() => {
+    return courts.map((court) => ({
+      value: String(court.id),
+      label: court.name,
+      description: court.court_type || 'Sân tiêu chuẩn'
+    }));
+  }, [courts]);
+
+  const filteredCourts = useMemo(() => {
+    if (selectedCourtIds.length === 0) {
+      return courts;
+    }
+
+    const selected = new Set(selectedCourtIds.map(String));
+    return courts.filter((court) => selected.has(String(court.id)));
+  }, [courts, selectedCourtIds]);
+
+  const courtSummary = useMemo(() => {
+    if (selectedCourtIds.length === 0) {
+      return 'Tất cả sân';
+    }
+
+    if (selectedCourtIds.length === 1) {
+      const selectedCourt = courts.find((court) => String(court.id) === String(selectedCourtIds[0]));
+      return selectedCourt?.name || '1 sân đã chọn';
+    }
+
+    return `${selectedCourtIds.length} sân đã chọn`;
+  }, [courts, selectedCourtIds]);
 
   const timeBands = useMemo(() => {
     const bandsByStart = new Map();
@@ -50,21 +93,18 @@ export default function CustomerPage() {
     return [...bandsByStart.values()].sort((a, b) => a.startKey.localeCompare(b.startKey));
   }, [daySlots]);
 
-  // Heatmap grid: rows = timeBands, cols = courts
   const heatmapGrid = useMemo(() => {
-    const courtList = selectedCourt === 'all' ? courts : courts.filter((court) => String(court.id) === selectedCourt);
     return timeBands.map(({ startKey, label }) => ({
       time: startKey,
       label,
-      cells: courtList.map((court) => 
-        daySlots.find((slot) => 
-          String(slot.court_id) === String(court.id) && 
-          timeKey(slot.start_time) === startKey
-        ) || null
+      cells: filteredCourts.map(
+        (court) =>
+          daySlots.find(
+            (slot) => String(slot.court_id) === String(court.id) && timeKey(slot.start_time) === startKey
+          ) || null
       )
     }));
-  }, [daySlots, courts, selectedCourt, timeBands]);
-
+  }, [daySlots, filteredCourts, timeBands]);
 
   async function loadSlots() {
     setLoading(true);
@@ -141,10 +181,6 @@ export default function CustomerPage() {
     }
   }
 
-  function formatTime(value) {
-    return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-  }
-
   useEffect(() => {
     loadCourts();
     loadSlots();
@@ -153,39 +189,62 @@ export default function CustomerPage() {
   }, []);
 
   return (
-    <section className="panel customer">
-      <div className="panel-header">
-        <div>
+    <section className="panel customer customer-soft-layout">
+      <div className="panel-header customer-header">
+        <div className="customer-heading">
+          <span className="customer-eyebrow">Lịch theo ngày</span>
           <h2>Bảng đặt sân & đồ uống</h2>
-          <p>Chọn ngày, nhìn theo khung giờ, nhấn trực tiếp vào ô trống để đặt sân.</p>
+          <p>Chọn ngày, lọc theo nhiều sân và nhấn trực tiếp vào ô trống để giữ chỗ nhanh.</p>
         </div>
-        <div className="filters filters-wrap">
-          <input type="date" value={day} onChange={(e) => setDay(e.target.value)} />
-          <button onClick={loadSlots} disabled={loading}>{loading ? 'Đang tải...' : 'Xem lịch'}</button>
-          <select value={selectedCourt} onChange={(e) => setSelectedCourt(e.target.value)}>
-            <option value="all">Tất cả sân</option>
-            {courts.map((court) => (
-              <option key={court.id} value={court.id}>{court.name}</option>
-            ))}
-          </select>
+
+        <div className="filters filters-wrap customer-toolbar">
+          <div className="toolbar-field">
+            <span className="toolbar-label">Ngày hoạt động</span>
+            <input type="date" value={day} onChange={(e) => setDay(e.target.value)} />
+          </div>
+
+          <button className="customer-primary-button" onClick={loadSlots} disabled={loading}>
+            {loading ? 'Đang tải...' : 'Xem lịch'}
+          </button>
+
+          <MultiSelectDropdown
+            label="Lọc theo sân"
+            allLabel="Tất cả sân"
+            triggerLabel={courtSummary}
+            options={courtFilterOptions}
+            selectedValues={selectedCourtIds}
+            onChange={setSelectedCourtIds}
+          />
         </div>
       </div>
 
-      <p className="message">{message}</p>
-      <p className="message">Vui lòng đăng nhập bằng tài khoản khách hàng để đặt sân.</p>
+      <div className="customer-status-stack">
+        <p className="message soft-message">{message}</p>
+        {!isCustomer ? (
+          <p className="message soft-message soft-message-muted">
+            Vui lòng đăng nhập bằng tài khoản khách hàng để đặt sân trực tiếp trên bảng lịch.
+          </p>
+        ) : null}
+      </div>
 
-      <div className="legend">
+      <div className="legend soft-legend">
         <span><i className="legend-free" /> Còn trống - đặt được</span>
         <span><i className="legend-booked" /> Đã đặt - có người</span>
         <span><i className="legend-drink" /> Khu bán nước</span>
       </div>
 
-      <div className="heatmap-wrapper">
+      <div className="customer-inline-summary">
+        <span>{courtSummary}</span>
+        <span>{filteredCourts.length} sân hiển thị</span>
+        <span>{timeBands.length} khung giờ</span>
+      </div>
+
+      <div className="heatmap-wrapper soft-heatmap-wrapper">
         <table className="heatmap">
           <thead>
             <tr>
               <th className="time-header">Giờ</th>
-              {(selectedCourt === 'all' ? courts : courts.filter((c) => String(c.id) === selectedCourt)).map((court) => (
+              {filteredCourts.map((court) => (
                 <th key={court.id} className="court-header">
                   <div className="court-header-content">
                     <strong>{court.name}</strong>
@@ -217,7 +276,11 @@ export default function CustomerPage() {
 
                   return (
                     <td key={slot.id} className="heatmap-cell free">
-                      <button className="cell-button" onClick={() => reserve(slot.id)} title={`${slot.price?.toLocaleString()} VND\nClick để đặt`}>
+                      <button
+                        className="cell-button"
+                        onClick={() => reserve(slot.id)}
+                        title={`${slot.price?.toLocaleString('vi-VN')} VND\nClick để đặt`}
+                      >
                         <span className="cell-price">{slot.price?.toLocaleString('vi-VN', { maximumFractionDigits: 0 })}</span>
                         <span className="cell-label">Đặt</span>
                       </button>
@@ -228,8 +291,15 @@ export default function CustomerPage() {
             ))}
           </tbody>
         </table>
-        {courts.length > 0 && timeBands.length === 0 ? (
-          <p className="message">Đã có sân mới nhưng ngày này chưa sinh slot, nên chưa có ô giờ để bấm đặt.</p>
+
+        {filteredCourts.length === 0 ? (
+          <p className="message soft-message">Chưa có sân nào được chọn để hiển thị. Vui lòng chọn ít nhất một sân.</p>
+        ) : null}
+
+        {filteredCourts.length > 0 && timeBands.length === 0 ? (
+          <p className="message soft-message">
+            Đã có sân mới nhưng ngày này chưa sinh slot, nên chưa có ô giờ để bấm đặt.
+          </p>
         ) : null}
       </div>
 
@@ -242,7 +312,7 @@ export default function CustomerPage() {
         />
       ) : null}
 
-      <div className="drink-board">
+      <div className="drink-board soft-drink-board">
         <div className="drink-board-header">
           <div>
             <h3>Quầy nước nhanh</h3>
@@ -251,10 +321,10 @@ export default function CustomerPage() {
           <span className="drink-chip">Phục vụ nhanh</span>
         </div>
         <div className="drink-grid">
-          {(beverages.length ? beverages : drinks).map((drink) => (
+          {(beverages.length ? beverages : fallbackBeverages).map((drink) => (
             <article className="drink-card" key={drink.name}>
               <h4>{drink.name}</h4>
-              <strong>{Number(drink.price).toLocaleString()} VND</strong>
+              <strong>{Number(drink.price).toLocaleString('vi-VN')} VND</strong>
               <p>{drink.description || drink.note}</p>
             </article>
           ))}
