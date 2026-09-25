@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"badminton-platform/backend/internal/models"
+	"badminton-platform/backend/internal/pricing"
 	"badminton-platform/backend/internal/repository"
 	"badminton-platform/backend/internal/timeutil"
 )
@@ -91,7 +92,7 @@ func (s *CourtService) UpdateCourt(id uint, name, courtType, openTime, closeTime
 		}
 	}
 	if priceChanged {
-		if err := s.slots.RepriceUnbookedByCourtFromDay(court.ID, from, court.BasePrice, 17, 21, 1.2); err != nil {
+		if err := s.slots.RepriceUnbookedByCourtFromDay(court.ID, from, court.BasePrice, pricing.DefaultPeakStartHour, pricing.DefaultPeakEndHour, pricing.DefaultPeakMultiplier); err != nil {
 			return nil, err
 		}
 	}
@@ -159,13 +160,18 @@ func (s *CourtService) EnsureDaySlots(day time.Time, intervalMin int, peakStart,
 			if _, ok := existingStart[cur.Unix()]; ok {
 				continue
 			}
-			price := court.BasePrice
-			if cur.Hour() >= peakStart && cur.Hour() < peakEnd {
-				price = int64(float64(price) * peakMultiplier)
-			}
+			price := pricing.CourtSlotPrice(court.BasePrice, cur, peakStart, peakEnd, peakMultiplier)
 			missing = append(missing, models.TimeSlot{CourtID: court.ID, StartTime: cur, EndTime: next, Price: price})
 		}
 		if err := s.slots.BulkCreate(missing); err != nil {
+			return err
+		}
+
+		// Refresh only currently available slots for the requested day. Booked
+		// slots are intentionally excluded so their original price snapshot is
+		// preserved. This also updates a future slot that becomes available again
+		// after a cancellation or expired hold.
+		if err := s.slots.RepriceUnbookedByCourtForDate(court.ID, day, court.BasePrice, peakStart, peakEnd, peakMultiplier); err != nil {
 			return err
 		}
 	}

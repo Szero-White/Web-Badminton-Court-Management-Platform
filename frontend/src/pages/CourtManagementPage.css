@@ -107,3 +107,12 @@
     width: 100%;
   }
 }
+
+.court-price-policy {
+  display: block;
+  max-width: 620px;
+  color: rgba(34, 55, 53, 0.58);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.55;
+}

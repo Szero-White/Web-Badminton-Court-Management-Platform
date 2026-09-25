@@ -4,11 +4,20 @@ import (
 	"time"
 
 	"badminton-platform/backend/internal/models"
+	"badminton-platform/backend/internal/pricing"
 
 	"gorm.io/gorm"
 )
 
 type SlotRepository struct{ db *gorm.DB }
+
+func (r *SlotRepository) WithTx(tx *gorm.DB) *SlotRepository {
+	return &SlotRepository{db: tx}
+}
+
+func (r *SlotRepository) UpdatePrice(slotID uint, price int64) error {
+	return r.db.Model(&models.TimeSlot{}).Where("id = ?", slotID).Update("price", price).Error
+}
 
 func (r *SlotRepository) BulkCreate(slots []models.TimeSlot) error {
 	if len(slots) == 0 {
@@ -149,13 +158,35 @@ func (r *SlotRepository) DeleteFutureUnbookedByCourt(courtID uint, from time.Tim
 		Delete(&models.TimeSlot{}).Error
 }
 
-func (r *SlotRepository) RepriceUnbookedByCourtFromDay(courtID uint, fromDay time.Time, basePrice int64, peakStart, peakEnd int, peakMultiplier float64) error {
-	start := fromDay
+func (r *SlotRepository) RepriceUnbookedByCourtFromDay(courtID uint, from time.Time, basePrice int64, peakStart, peakEnd int, peakMultiplier float64) error {
+	start := from
 	if start.IsZero() {
 		start = time.Now()
 	}
 	start = start.Truncate(time.Minute)
 
+	query := r.db.Where("court_id = ? AND start_time >= ?", courtID, start)
+	return r.repriceUnbookedSlots(query, basePrice, peakStart, peakEnd, peakMultiplier)
+}
+
+// RepriceUnbookedByCourtForDate synchronizes only free slots for the requested
+// current/future date with the court's current price policy. Past times from the
+// same day and every slot protected by an active booking remain unchanged.
+func (r *SlotRepository) RepriceUnbookedByCourtForDate(courtID uint, day time.Time, basePrice int64, peakStart, peakEnd int, peakMultiplier float64) error {
+	start, end := dayBounds(day)
+	now := time.Now()
+	if !end.After(now) {
+		return nil
+	}
+	if now.After(start) {
+		start = now.Truncate(time.Minute)
+	}
+
+	query := r.db.Where("court_id = ? AND start_time >= ? AND start_time < ?", courtID, start, end)
+	return r.repriceUnbookedSlots(query, basePrice, peakStart, peakEnd, peakMultiplier)
+}
+
+func (r *SlotRepository) repriceUnbookedSlots(query *gorm.DB, basePrice int64, peakStart, peakEnd int, peakMultiplier float64) error {
 	blocking := r.db.Model(&models.Booking{}).
 		Select("time_slot_id").
 		Where("status IN ? OR (status = ? AND (expires_at IS NULL OR expires_at > ?))",
@@ -165,20 +196,13 @@ func (r *SlotRepository) RepriceUnbookedByCourtFromDay(courtID uint, fromDay tim
 		)
 
 	var slots []models.TimeSlot
-	if err := r.db.Where("court_id = ? AND start_time >= ?", courtID, start).
-		Where("id NOT IN (?)", blocking).
-		Find(&slots).Error; err != nil {
+	if err := query.Where("id NOT IN (?)", blocking).Find(&slots).Error; err != nil {
 		return err
 	}
 
-	peakPrice := int64(float64(basePrice) * peakMultiplier)
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		for _, slot := range slots {
-			price := basePrice
-			hour := slot.StartTime.Hour()
-			if hour >= peakStart && hour < peakEnd {
-				price = peakPrice
-			}
+			price := pricing.CourtSlotPrice(basePrice, slot.StartTime, peakStart, peakEnd, peakMultiplier)
 			if slot.Price == price {
 				continue
 			}

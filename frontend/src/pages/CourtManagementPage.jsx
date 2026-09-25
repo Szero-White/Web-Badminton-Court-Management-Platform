@@ -73,6 +73,7 @@ export default function CourtManagementPage() {
     if (!editingCourt) return;
     try {
       const basePrice = normalizePriceInput(formData.base_price, Number(editingCourt.base_price || 0));
+      const priceChanged = basePrice !== Number(editingCourt.base_price || 0);
       const res = await adminApi.updateCourt(editingCourt.id, {
         name: formData.name || editingCourt.name,
         court_type: formData.court_type || editingCourt.court_type,
@@ -82,7 +83,11 @@ export default function CourtManagementPage() {
         is_active: formData.is_active,
         is_maintenance: formData.is_maintenance
       });
-      setMessage(`✓ Cập nhật sân thành công: ${res.data?.data?.name}`);
+      setMessage(
+        priceChanged
+          ? `✓ Cập nhật sân thành công: ${res.data?.data?.name}. Giá mới áp dụng cho các slot trống từ hiện tại trở đi; booking đã tạo và dữ liệu quá khứ giữ nguyên giá.`
+          : `✓ Cập nhật sân thành công: ${res.data?.data?.name}`
+      );
       setEditingCourt(null);
       setFormData({
         name: '',
@@ -182,6 +187,9 @@ export default function CourtManagementPage() {
                 onChange={(e) => setFormData({ ...formData, base_price: e.target.value })}
                 required={!editingCourt}
               />
+              <small className="court-price-policy">
+                Giá mới chỉ áp dụng cho slot trống từ thời điểm hiện tại trở đi. Booking đã tạo và dữ liệu lịch sử giữ nguyên giá đã ghi nhận.
+              </small>
             </label>
 
             {editingCourt && (

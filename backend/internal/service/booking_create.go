@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"badminton-platform/backend/internal/models"
+	"badminton-platform/backend/internal/pricing"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -115,11 +116,27 @@ func (s *BookingService) CreatePendingBooking(ctx context.Context, userID, slotI
 	var created *models.Booking
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		bookings := s.bookings.WithTx(tx)
+		slots := s.slots.WithTx(tx)
 		if existing, findErr := bookings.FindActiveByTimeSlotIDExcludeBooking(slot.ID, 0); findErr != nil {
 			return findErr
 		} else if existing != nil {
 			return errors.New("slot already booked")
 		}
+
+		// Refresh the price immediately before booking. This guarantees that a
+		// slot released after cancellation/hold expiry uses the court's current
+		// price, while existing bookings keep their original TotalPrice snapshot.
+		slot.Price = pricing.CourtSlotPrice(
+			slot.Court.BasePrice,
+			slot.StartTime,
+			pricing.DefaultPeakStartHour,
+			pricing.DefaultPeakEndHour,
+			pricing.DefaultPeakMultiplier,
+		)
+		if err := slots.UpdatePrice(slot.ID, slot.Price); err != nil {
+			return err
+		}
+
 		created, err = s.createPendingBookingWithTx(tx, userID, slot, customerType, notes)
 		return err
 	})
@@ -187,12 +204,25 @@ func (s *BookingService) CreatePendingBookingRange(ctx context.Context, userID, 
 	created := make([]*models.Booking, 0, len(selected))
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		bookings := s.bookings.WithTx(tx)
+		slots := s.slots.WithTx(tx)
 		for _, slot := range selected {
 			if existing, findErr := bookings.FindActiveByTimeSlotIDExcludeBooking(slot.ID, 0); findErr != nil {
 				return findErr
 			} else if existing != nil {
 				return fmt.Errorf("slot %s is already booked", formatBookingClock(slot.StartTime))
 			}
+
+			slot.Price = pricing.CourtSlotPrice(
+				startSlot.Court.BasePrice,
+				slot.StartTime,
+				pricing.DefaultPeakStartHour,
+				pricing.DefaultPeakEndHour,
+				pricing.DefaultPeakMultiplier,
+			)
+			if err := slots.UpdatePrice(slot.ID, slot.Price); err != nil {
+				return err
+			}
+
 			booking, createErr := s.createPendingBookingWithTx(tx, userID, &slot, customerType, combinedNote)
 			if createErr != nil {
 				return createErr

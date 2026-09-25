@@ -263,7 +263,7 @@ Production requirements:
 
 ### Admin
 - Booking desk and booking cancellation.
-- Court setup, operating hours, price, active/maintenance state.
+- Court setup, operating hours, current/future pricing, active/maintenance state.
 - Staff/admin account management.
 - Beverage catalog, stock adjustment, audit history.
 - Revenue/booking dashboard.
@@ -274,6 +274,7 @@ Production requirements:
 - Redis distributed holds plus DB transaction checks and a unique partial index protect against double booking.
 - Pending holds expire automatically.
 - Payment/refund/deposit-adjustment records preserve accounting history.
+- Booking totals snapshot the price at reservation time; admin price changes affect only available current/future slots, never historical or already-booked prices.
 - JWT access and refresh tokens have explicit token types and HS256 validation.
 - Role-based authorization for customer/staff/admin routes.
 - Configurable CORS, auth rate limiting, request body limits, request IDs and security headers.

@@ -53,3 +53,15 @@ This avoids relying on UI state for double-booking prevention.
 ## Data consistency
 
 Deposit changes and refunds generate payment records instead of only mutating booking totals. This keeps dashboard revenue based on the payment ledger rather than on mutable booking state.
+
+## Court pricing consistency
+
+Court pricing follows an explicit snapshot policy:
+
+1. `courts.base_price` is the current commercial price configured by an administrator.
+2. Available current/future `time_slots.price` values are synchronized from the current court price and peak-hour policy.
+3. Creating a booking copies the slot price into `bookings.total_price`. That booking total is the immutable commercial snapshot for the reservation.
+4. Administrator price changes reprice only available slots from the current time forward. Past slots and slots protected by active bookings are never rewritten.
+5. If a future booking is canceled or a pending hold expires, the released slot is synchronized to the current court price before it is shown/booked again.
+
+This separates mutable future pricing from historical accounting data and prevents a later price update from changing the value of an existing booking.
