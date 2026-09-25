@@ -1,19 +1,26 @@
 # Secrets and local configuration
 .env
-.env.*
-!.env.example
-!.env.production.example
+.env.local
+.env.*.local
+.env.demo.local
 backend/.env
 frontend/.env
+!.env.example
+!.env.production.example
+!backend/.env.example
+!frontend/.env.example
 
 # Backend generated/runtime files
 backend/*.db
 backend/*.db-*
 backend/*.sqlite*
 backend/*.exe
+backend/*.exe~
 backend/bin/
 backend/backups/
 backend/coverage/
+backend/*.log
+backend/*.bak
 *.log
 *.out
 *.err
@@ -22,6 +29,13 @@ backend/coverage/
 frontend/node_modules/
 frontend/dist/
 frontend/coverage/
+frontend/*.log
+
+# Local tooling / backups
+.refactor-backup/
+.local-config-backup/
+.local-artifacts/
+.ui-backup/
 
 # IDE / OS
 .vscode/
@@ -34,47 +48,4 @@ Thumbs.db
 *.tar
 *.gz
 
-# Local refactor backups
-.refactor-backup/
-
-# Local refactor backups
-.refactor-backup/
-
-# ===== Local / generated artifacts =====
-.refactor-backup/
-.local-artifacts/
-
-# Secrets (keep templates)
-.env
-.env.local
-.env.*.local
-backend/.env
-frontend/.env
-!.env.example
-!.env.production.example
-!backend/.env.example
-!frontend/.env.example
-
-# Runtime / build artifacts
-*.exe
-*.exe~
-*.log
-*.db
-*.db-shm
-*.db-wal
-*.bak
-backend/backups/
-frontend/node_modules/
-frontend/dist/
-
-# OS / IDE
-.DS_Store
-Thumbs.db
-.local-config-backup/
-backend/*.log
-frontend/*.log
-backend/*.bak
-
-.ui-backup/
-.local-config-backup/
-backend/*.exe~
+.local-docs-backup/
