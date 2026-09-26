@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import AppToast from '../components/feedback/AppToast';
+import PageBackButton from '../components/navigation/PageBackButton';
 import { bookingApi, adminApi } from '../services/api';
 import AppDatePicker from '../components/ui/AppDatePicker';
 
@@ -82,10 +83,10 @@ export default function DashboardRevenuePage() {
             {loading ? 'Đang tải...' : 'Xem'}
           </button>
         </div>
-        <Link to="/admin" className="staff-link-pill">Quay lại dashboard</Link>
+        <PageBackButton to="/admin" label="Quay lại Tổng quan" />
       </div>
 
-      <p className="message">{message}</p>
+      <AppToast message={message} />
 
       {/* Thống kê tổng quan */}
       <div className="metrics-grid">

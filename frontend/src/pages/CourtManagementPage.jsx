@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import AppToast from '../components/feedback/AppToast';
+import PageBackButton from '../components/navigation/PageBackButton';
 import { adminApi } from '../services/api';
 import './CourtManagementPage.css';
 
@@ -128,10 +129,10 @@ export default function CourtManagementPage() {
           <h2>Quản Lý Sân Cầu Lông</h2>
           <p>Tạo sân mới, chỉnh sửa thông tin, đánh dấu bảo trì.</p>
         </div>
-        <Link to="/admin" className="court-back-link">Quay lại Dashboard</Link>
+        <PageBackButton to="/admin" label="Quay lại Tổng quan" />
       </div>
 
-      <p className="message">{message}</p>
+      <AppToast message={message} />
 
       <div className="admin-forms">
         {/* Form tạo sân */}

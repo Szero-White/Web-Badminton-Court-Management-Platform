@@ -5,7 +5,7 @@ import { authApi } from '../services/api';
 const PORTALS = {
   admin: { title: 'Quản trị viên', description: 'Quản lý sân, nhân sự, doanh thu và cấu hình hệ thống.', route: '/admin' },
   staff: { title: 'Nhân viên', description: 'Vận hành quầy, booking, check-in, đồ uống và thu chi.', route: '/staff' },
-  customer: { title: 'Khách hàng', description: 'Đăng nhập để giữ chỗ, đặt sân và quản lý booking.', route: '/customer' }
+  customer: { title: 'Khách hàng', description: 'Xem lịch sân, giá và tình trạng đặt chỗ theo ngày.', route: '/customer' }
 };
 
 const DEMO_ACCOUNTS = {

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import AppToast from '../components/feedback/AppToast';
+import PageBackButton from '../components/navigation/PageBackButton';
 import { staffApi } from '../services/api';
 import './AdminCheckinPage.css';
 
@@ -87,14 +88,10 @@ export default function AdminCheckinPage() {
           <h2>Check-in khách hàng</h2>
           <p>Trang này dùng cùng API và cùng nguồn dữ liệu check-in như nhân viên.</p>
         </div>
-        <div className="admin-checkin-links">
-          <Link to="/admin" className="staff-link-pill">Dashboard</Link>
-          <Link to="/admin/booking-desk" className="staff-link-pill">Booking</Link>
-          <Link to="/admin/revenue" className="staff-link-pill">Doanh thu</Link>
-        </div>
+        <PageBackButton to="/admin" label="Quay lại Tổng quan" />
       </div>
 
-      <p className="message">{message}</p>
+      <AppToast message={message} />
 
       <div className="admin-checkin-grid">
         <article className="admin-checkin-card admin-checkin-card--wide">

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import AppToast from '../components/feedback/AppToast';
+import PageBackButton from '../components/navigation/PageBackButton';
 import { adminApi } from '../services/api';
 import BeverageForm from '../features/beverages/components/BeverageForm';
 import BeverageHistoryPanel from '../features/beverages/components/BeverageHistoryPanel';
@@ -136,12 +138,15 @@ export default function BeverageManagementPage() {
           <h1>Nước uống & hàng bán tại quầy</h1>
           <p>Quản lý danh mục, giá bán, tồn kho và lịch sử thay đổi trên một màn hình.</p>
         </div>
-        <button type="button" className="btn-secondary" onClick={() => loadBeverages({ announce: true })} disabled={loading}>
-          {loading ? 'Đang tải...' : 'Làm mới'}
-        </button>
+        <div className="page-header-actions">
+          <button type="button" className="btn-secondary" onClick={() => loadBeverages({ announce: true })} disabled={loading}>
+            {loading ? 'Đang tải...' : 'Làm mới'}
+          </button>
+          <PageBackButton to="/admin" label="Quay lại Tổng quan" />
+        </div>
       </header>
 
-      {message ? <p className="message beverage-page-message" role="status">{message}</p> : null}
+      <AppToast message={message} />
 
       <BeverageForm
         form={form}

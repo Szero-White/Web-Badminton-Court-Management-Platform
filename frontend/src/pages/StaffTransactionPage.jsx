@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import AppToast from '../components/feedback/AppToast';
+import PageBackButton from '../components/navigation/PageBackButton';
 import TransactionForms from '../features/transactions/components/TransactionForms';
 import ShiftSummaryPanel from '../features/transactions/components/ShiftSummaryPanel';
 import { staffApi } from '../services/api';
@@ -127,10 +128,9 @@ export default function StaffTransactionPage() {
     <div className="staff-transaction-page">
       <div className="transaction-header">
         <h1>💰 {localStorage.getItem('user_name') || 'Nhân viên'} - Sổ Thu Chi ({shiftLabel(currentShift)})</h1>
-        <Link to="/staff" className="transaction-back-link">Quay lại trang nhân viên</Link>
+        <PageBackButton to="/staff" label="Quay lại Đặt sân" />
       </div>
-      {error ? <div className="alert alert-error" role="alert">{error}</div> : null}
-      {successMessage ? <div className="alert alert-success" role="status">{successMessage}</div> : null}
+      <AppToast message={error || successMessage} tone={error ? 'error' : 'success'} />
       <div className="transaction-grid">
         <TransactionForms
           saleForm={saleForm}

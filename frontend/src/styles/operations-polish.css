@@ -668,3 +668,275 @@ body {
     width: 100%;
   }
 }
+
+/* ---------- V10 shared navigation / feedback / schedule tools ---------- */
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.page-back-button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid rgba(34, 55, 53, 0.12);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.88);
+  color: rgba(34, 55, 53, 0.74);
+  box-shadow: 0 5px 18px rgba(34, 55, 53, 0.04);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 550;
+  white-space: nowrap;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.page-back-button:hover {
+  border-color: rgba(29, 116, 113, 0.24);
+  background: rgba(29, 116, 113, 0.055);
+  color: #1d6662;
+  box-shadow: 0 7px 20px rgba(29, 116, 113, 0.06);
+}
+
+.page-back-button-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.app-toast-region {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  z-index: 5000;
+  width: min(620px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.app-toast {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 12px 11px 14px;
+  border: 1px solid rgba(34, 55, 53, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 18px 50px rgba(24, 43, 41, 0.16);
+  backdrop-filter: blur(12px);
+  pointer-events: auto;
+  animation: app-toast-enter 180ms ease-out;
+}
+
+.app-toast-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #2c8f89;
+}
+
+.app-toast--success .app-toast-indicator { background: #3d8a61; }
+.app-toast--error .app-toast-indicator { background: #c45f52; }
+
+.app-toast-message {
+  min-width: 0;
+  color: rgba(34, 55, 53, 0.84);
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.app-toast-close {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: rgba(34, 55, 53, 0.5) !important;
+  box-shadow: none !important;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.app-toast-close:hover {
+  transform: none !important;
+  background: rgba(34, 55, 53, 0.055) !important;
+  color: rgba(34, 55, 53, 0.76) !important;
+}
+
+@keyframes app-toast-enter {
+  from { opacity: 0; transform: translateY(-10px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.schedule-court-filter-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.schedule-court-filter-summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.schedule-court-filter-summary span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid rgba(34, 55, 53, 0.09);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: rgba(34, 55, 53, 0.6);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.schedule-court-filter-control {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.schedule-court-filter-control .multi-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  min-width: 0;
+}
+
+.schedule-court-filter-control .toolbar-label {
+  margin: 0;
+  color: rgba(34, 55, 53, 0.55);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.schedule-court-filter-control .multi-select-trigger {
+  width: 220px;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 11px;
+  border: 1px solid rgba(34, 55, 53, 0.12) !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  color: rgba(34, 55, 53, 0.78) !important;
+  box-shadow: 0 4px 14px rgba(34, 55, 53, 0.03) !important;
+  font-size: 12.5px;
+  font-weight: 500 !important;
+  text-align: left;
+}
+
+.schedule-court-filter-control .multi-select-trigger:hover {
+  transform: none !important;
+  border-color: rgba(29, 116, 113, 0.28) !important;
+}
+
+.schedule-court-filter-control .multi-select-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: auto;
+  z-index: 220;
+  width: min(340px, calc(100vw - 40px));
+  max-height: 360px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid rgba(34, 55, 53, 0.1);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 52px rgba(24, 43, 41, 0.16);
+}
+
+@media (max-width: 760px) {
+  .schedule-court-filter-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .schedule-court-filter-control {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .schedule-court-filter-control .multi-select {
+    display: grid;
+    gap: 7px;
+    width: 100%;
+  }
+
+  .schedule-court-filter-control .multi-select-trigger {
+    width: 100%;
+  }
+
+  .schedule-court-filter-control .multi-select-menu {
+    left: 0;
+    right: auto;
+    width: 100%;
+  }
+}
+
+
+/* React portal keeps the booking dialog independent from transformed page panels. */
+.booking-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 4500 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 24px !important;
+  overflow: auto !important;
+}
+
+.booking-modal {
+  margin: auto !important;
+  max-height: min(860px, calc(100dvh - 48px)) !important;
+}
+
+@media (max-width: 760px) {
+  .schedule-court-filter-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .schedule-court-filter-control {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .schedule-court-filter-control .multi-select-menu {
+    left: 0;
+    right: auto;
+    width: 100%;
+  }
+
+  .booking-modal-backdrop {
+    place-items: end center !important;
+    padding: 10px !important;
+  }
+
+  .page-header-actions {
+    justify-content: flex-start;
+  }
+}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import AppToast from '../components/feedback/AppToast';
 import { dashboardApi } from '../services/api';
 import './AdminPage.css';
 
@@ -55,7 +56,7 @@ export default function AdminPage() {
         </button>
       </div>
 
-      {error ? <p className="message admin-overview-message" role="alert">{error}</p> : null}
+      <AppToast message={error} tone="error" />
 
       <div className="metrics-grid admin-overview-metrics" aria-busy={loading}>
         <article className="metric-card"><label>Doanh thu ngày</label><h3>{formatMoney(summary?.daily_revenue)} VND</h3></article>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import AppToast from '../components/feedback/AppToast';
+import PageBackButton from '../components/navigation/PageBackButton';
 import CounterInventoryTable from '../features/beverages/components/CounterInventoryTable';
 import CounterToolbar from '../features/beverages/components/CounterToolbar';
 import { staffApi } from '../services/api';
@@ -139,11 +140,11 @@ export default function BeverageCounterPage() {
         </div>
         <div className="counter-header-actions">
           <button type="button" className="btn-secondary" onClick={() => loadStock({ announce: true })} disabled={loading}>{loading ? 'Đang tải...' : 'Làm mới'}</button>
-          <Link to="/staff" className="counter-back-link">Quay lại trang nhân viên</Link>
+          <PageBackButton to="/staff" label="Quay lại Đặt sân" />
         </div>
       </div>
 
-      {message ? <p className="message" role="status">{message}</p> : null}
+      <AppToast message={message} />
 
       <CounterToolbar
         shift={shift}
