@@ -1,4 +1,4 @@
-.customer-soft-layout {
+﻿.customer-soft-layout {
   gap: 24px;
 }
 
@@ -110,7 +110,7 @@
 
 
 .customer-soft-layout > .schedule-date-nav {
-  margin-top: 2px;
+  margin-top: 0;
 }
 .customer-status-stack {
   display: grid;
@@ -457,3 +457,4 @@
     padding-bottom: 0;
   }
 }
+

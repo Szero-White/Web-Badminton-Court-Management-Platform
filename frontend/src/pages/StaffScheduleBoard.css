@@ -1,4 +1,4 @@
-.staff-board-toolbar {
+﻿.staff-board-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -15,7 +15,7 @@
 }
 
 .staff-booking-board .schedule-date-nav {
-  margin-top: 4px;
+  margin-top: 0;
 }
 
 .staff-slot-note {
@@ -80,3 +80,4 @@
   color: #667085;
   font-style: italic;
 }
+

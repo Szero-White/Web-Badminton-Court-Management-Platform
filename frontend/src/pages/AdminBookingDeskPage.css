@@ -1,4 +1,4 @@
-.admin-booking-desk-page {
+﻿.admin-booking-desk-page {
   background: linear-gradient(160deg, #fffdf8, #f2f8f6);
 }
 
@@ -40,7 +40,7 @@
 }
 
 .admin-booking-desk-heatmap .schedule-date-nav {
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 .admin-booking-desk-heatmap-head p {
@@ -234,3 +234,4 @@
   }
 
 }
+

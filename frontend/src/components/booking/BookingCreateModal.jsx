@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import AppSelect from '../ui/AppSelect';
 import { formatTime } from '../../utils/dateTime';
 
@@ -94,7 +95,7 @@ export default function BookingCreateModal({
     setForm((current) => ({ ...current, [field]: value }));
   };
 
-  return (
+  const modal = (
     <div
       className="booking-modal-backdrop"
       role="presentation"
@@ -268,4 +269,6 @@ export default function BookingCreateModal({
       </section>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

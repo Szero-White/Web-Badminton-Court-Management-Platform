@@ -11,14 +11,21 @@ export function addDays(dateString, days) {
   return formatDayInput(date);
 }
 
-export function formatDateLabel(dateString) {
+export function startOfWeekMonday(dateString) {
   const date = new Date(`${dateString}T00:00:00`);
-  const today = new Date(`${todayString()}T00:00:00`);
-  const diffDays = Math.round((date - today) / 86400000);
-  if (diffDays === 0) return 'Hôm nay';
-  if (diffDays === 1) return 'Ngày mai';
-  if (diffDays === 2) return 'Ngày kia';
-  return date.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'numeric' });
+  const weekday = date.getDay();
+  const offsetToMonday = weekday === 0 ? -6 : 1 - weekday;
+  return addDays(dateString, offsetToMonday);
+}
+
+export function formatWeekdayDateLabel(dateString) {
+  const date = new Date(`${dateString}T00:00:00`);
+  const weekdayLabels = ['CN', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+  return `${weekdayLabels[date.getDay()]}, ${date.getDate()}/${date.getMonth() + 1}`;
+}
+
+export function formatDateLabel(dateString) {
+  return formatWeekdayDateLabel(dateString);
 }
 
 export function formatDateFull(dateString) {

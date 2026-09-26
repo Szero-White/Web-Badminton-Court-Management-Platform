@@ -1,6 +1,11 @@
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import BookingCreateModal from '../../components/booking/BookingCreateModal';
+import AppToast from '../../components/feedback/AppToast';
+import PageBackButton from '../../components/navigation/PageBackButton';
+import ScheduleCourtFilterBar from '../../components/schedule/ScheduleCourtFilterBar';
 import ScheduleDateNavigator from '../../components/schedule/ScheduleDateNavigator';
+import ScheduleLegend from '../../components/schedule/ScheduleLegend';
+import ScheduleSlotCell from '../../components/schedule/ScheduleSlotCell';
 import AppSelect from '../../components/ui/AppSelect';
 import { formatTime } from '../../utils/dateTime';
 
@@ -38,6 +43,23 @@ export default function AdminBookingDeskView({ vm }) {
     handleDeleteBooking
   } = vm;
 
+  const [selectedCourtIds, setSelectedCourtIds] = useState([]);
+
+  useEffect(() => {
+    setSelectedCourtIds((current) => current.filter((courtId) => courts.some((court) => String(court.courtId) === String(courtId))));
+  }, [courts]);
+
+  const visibleIndexes = useMemo(() => {
+    if (selectedCourtIds.length === 0) return courts.map((_, index) => index);
+    const selected = new Set(selectedCourtIds.map(String));
+    return courts.map((court, index) => ({ court, index })).filter(({ court }) => selected.has(String(court.courtId))).map(({ index }) => index);
+  }, [courts, selectedCourtIds]);
+
+  const visibleCourts = useMemo(() => visibleIndexes.map((index) => courts[index]), [courts, visibleIndexes]);
+  const visibleGrid = useMemo(() => heatmapGrid.map((row) => ({ ...row, cells: visibleIndexes.map((index) => row.cells[index]) })), [heatmapGrid, visibleIndexes]);
+  const courtFilterOptions = useMemo(() => courts.map((court) => ({ value: String(court.courtId), label: court.courtName, description: `Sân ${court.courtId}` })), [courts]);
+  const courtSummary = selectedCourtIds.length === 0 ? 'Tất cả sân' : selectedCourtIds.length === 1 ? visibleCourts[0]?.courtName || '1 sân đã chọn' : `${selectedCourtIds.length} sân đã chọn`;
+
   return (
     <section className="panel admin-booking-desk-page">
       <div className="admin-booking-desk-header">
@@ -45,31 +67,41 @@ export default function AdminBookingDeskView({ vm }) {
           <h2>Quản lý đặt sân</h2>
           <p>Quản lý lịch sân, tạo booking và cập nhật booking đang hoạt động.</p>
         </div>
-        <div className="admin-booking-desk-links">
-          <Link to="/admin/booking-desk" className="staff-link-pill">Đặt sân</Link>
-          <Link to="/admin" className="staff-link-pill">Tổng quan</Link>
-        </div>
+        <PageBackButton to="/admin" label="Quay lại Tổng quan" />
       </div>
 
-      {message ? <p className="message" role="status">{message}</p> : null}
+      <AppToast message={message} />
 
       <article className="admin-booking-desk-card admin-booking-desk-heatmap">
         <ScheduleDateNavigator
           value={day}
           onChange={setDay}
+          eyebrow="Lịch theo ngày"
           title="Bảng sân theo giờ"
-          description="Bấm ô trống để mở hộp đặt sân; bấm ô đã đặt để xem và chỉnh sửa booking."
-        />
+          description="Bấm ô trống để đặt sân cho khách; bấm ô đã đặt để xem và xử lý booking."
+        >
+          <ScheduleCourtFilterBar
+            options={courtFilterOptions}
+            selectedValues={selectedCourtIds}
+            onChange={setSelectedCourtIds}
+            triggerLabel={courtSummary}
+            visibleCourtCount={visibleCourts.length}
+            totalCourtCount={courts.length}
+            slotCount={heatmapGrid.length}
+          />
+        </ScheduleDateNavigator>
+
+        <ScheduleLegend />
 
         <div className="heatmap-wrapper admin-booking-desk-heatmap-wrap">
-          {courts.length === 0 ? (
+          {visibleCourts.length === 0 ? (
             <p>Không có sân nào. Vui lòng chọn ngày khác.</p>
           ) : (
             <table className="heatmap">
               <thead>
                 <tr>
                   <th className="time-header">Giờ</th>
-                  {courts.map((court) => (
+                  {visibleCourts.map((court) => (
                     <th key={court.courtId} className="court-header">
                       <div className="court-header-content">
                         <strong>{court.courtName}</strong>
@@ -79,47 +111,29 @@ export default function AdminBookingDeskView({ vm }) {
                 </tr>
               </thead>
               <tbody>
-                {heatmapGrid.map(({ time, label, cells }) => (
+                {visibleGrid.map(({ time, label, cells }) => (
                   <tr key={time} className="heatmap-row">
                     <td className="time-cell">{label}</td>
                     {cells.map((slot, index) => {
-                      const isSelected = selectedBookingSlotIds?.has?.(String(slot?.id)) || false;
                       if (!slot) {
-                        return <td key={`${time}-${index}`} className="heatmap-cell empty">-</td>;
+                        return <ScheduleSlotCell key={`${time}-${index}`} slot={null} />;
                       }
 
-                      if (slot.booked) {
-                        const customerTypeLabel = slot.customer_type === 'monthly' ? 'Khách tháng' : 'Khách vãng lai';
-                        const groupInfo = groupInfoBySlotId?.get?.(String(slot.id));
-                        const group = bookingGroups.find((item) => item.groupKey === groupInfo?.groupKey);
-                        const slotCount = groupInfo?.slotCount || 1;
-                        const note = group?.booking_note?.trim() || '';
-
-                        return (
-                          <td
-                            key={slot.id}
-                            className={`heatmap-cell booked ${slot.customer_type === 'monthly' ? 'customer-monthly' : 'customer-walkin'} ${isSelected ? 'is-selected' : ''}`}
-                            onClick={() => handleCellClick(slot)}
-                          >
-                            <div className="cell-content">
-                              <span className="booking-code">{slot.customer_name || 'Khách'}</span>
-                              <span className="booking-time">{customerTypeLabel}</span>
-                              <span className="booking-time">
-                                {slot.booking_code || 'Booking'}{slotCount > 1 ? ` · ${slotCount} slot` : ''}
-                              </span>
-                              {note ? <span className="booking-note-preview" title={note}>{note}</span> : null}
-                            </div>
-                          </td>
-                        );
-                      }
+                      const groupInfo = groupInfoBySlotId?.get?.(String(slot.id));
+                      const group = bookingGroups.find((item) => item.groupKey === groupInfo?.groupKey);
+                      const rangeText = group ? `${formatTime(group.start_time)} - ${formatTime(group.end_time)}` : '';
 
                       return (
-                        <td key={slot.id} className="heatmap-cell free">
-                          <button type="button" className="cell-button" onClick={() => handleCellClick(slot)}>
-                            <span className="cell-price">{Number(slot.price || 0).toLocaleString('vi-VN')}</span>
-                            <span className="cell-label">Đặt</span>
-                          </button>
-                        </td>
+                        <ScheduleSlotCell
+                          key={slot.id || `${time}-${index}`}
+                          slot={slot}
+                          mode="manage"
+                          selected={selectedBookingSlotIds?.has?.(String(slot.id)) || false}
+                          onSelect={handleCellClick}
+                          slotCount={groupInfo?.slotCount || 1}
+                          rangeText={rangeText}
+                          note={group?.booking_note?.trim() || ''}
+                        />
                       );
                     })}
                   </tr>
@@ -221,7 +235,7 @@ export default function AdminBookingDeskView({ vm }) {
 
       <BookingCreateModal
         open={showBookingForm}
-        title="Đặt sân mới"
+        title="Đặt sân cho khách"
         selectedSlot={selectedSlot}
         day={day}
         endSlots={endSlots}

@@ -100,7 +100,6 @@ export default function AdminBookingDeskPage() {
       const res = await adminApi.getDaySlots(day);
       const data = res.data?.data || [];
       setSlots(data);
-      setMessage(`Đã tải ${data.length} slot cho ngày ${day}`);
     } catch (err) {
       setMessage('Lỗi tải dữ liệu: ' + (err.response?.data?.error?.message || err.message));
       setSlots([]);

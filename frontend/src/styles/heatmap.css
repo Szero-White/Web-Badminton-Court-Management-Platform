@@ -1,4 +1,4 @@
-/* Heatmap Table Style */
+﻿/* Heatmap Table Style */
 .heatmap-wrapper {
   border-radius: 18px;
   overflow: auto;
@@ -267,3 +267,219 @@
     font-size: 10px;
   }
 }
+
+/* Shared schedule slot presentation (Customer / Staff / Admin) */
+.schedule-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 12px;
+}
+
+.schedule-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid rgba(18, 35, 34, 0.09);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #60706e;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.schedule-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.schedule-legend-dot--available { background: #8edc64; }
+.schedule-legend-dot--walkin { background: #e98f79; }
+.schedule-legend-dot--monthly { background: #839be2; }
+
+.heatmap td.schedule-slot-cell {
+  height: 92px;
+  padding: 5px !important;
+  cursor: default;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.heatmap td.schedule-slot-cell--available {
+  background: #f5fbef;
+  border-color: #d8ebc9;
+}
+
+.heatmap td.schedule-slot-cell--walkin {
+  background: #fff4f0;
+  border-color: #f2d1c8;
+}
+
+.heatmap td.schedule-slot-cell--monthly {
+  background: #f2f5ff;
+  border-color: #d4dcf5;
+}
+
+.heatmap td.schedule-slot-cell--booked {
+  background: #f7f7f5;
+  border-color: #e1e3df;
+}
+
+.schedule-slot-card {
+  width: 100%;
+  min-height: 78px;
+  border: 0;
+  border-radius: 12px;
+  padding: 9px 10px;
+  background: transparent;
+  color: #334340;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  text-align: center;
+  box-shadow: none;
+}
+
+button.schedule-slot-card--interactive {
+  cursor: pointer;
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+button.schedule-slot-card--interactive:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 5px 14px rgba(31, 50, 48, 0.07);
+}
+
+button.schedule-slot-card--interactive:focus-visible {
+  outline: 2px solid #238b87;
+  outline-offset: -2px;
+}
+
+.schedule-slot-card--readonly {
+  cursor: default;
+  user-select: text;
+}
+
+.schedule-slot-price {
+  color: #237d79;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.schedule-slot-action,
+.schedule-slot-availability {
+  color: #657571;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.schedule-slot-badges {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.schedule-slot-type,
+.schedule-slot-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 21px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.schedule-slot-type--walkin {
+  background: #fde3dc;
+  color: #a6503e;
+}
+
+.schedule-slot-type--monthly {
+  background: #e1e7fb;
+  color: #4963ac;
+}
+
+.schedule-slot-type--booked {
+  background: #e8eae7;
+  color: #65706d;
+}
+
+.schedule-slot-status {
+  background: rgba(255, 255, 255, 0.76);
+  color: #6a7774;
+  border: 1px solid rgba(18, 35, 34, 0.07);
+}
+
+.schedule-slot-customer {
+  max-width: 100%;
+  color: #34413f;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-slot-meta,
+.schedule-slot-range,
+.schedule-slot-public-copy,
+.schedule-slot-note {
+  max-width: 100%;
+  color: #72807d;
+  font-size: 10px;
+  font-weight: 450;
+  line-height: 1.25;
+}
+
+.schedule-slot-meta,
+.schedule-slot-range {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-slot-note {
+  color: #8a6a42;
+}
+
+.heatmap td.schedule-slot-cell.is-selected,
+.heatmap td.schedule-slot-cell.customer-monthly.is-selected,
+.heatmap td.schedule-slot-cell.customer-walkin.is-selected {
+  border: 2px solid #238b87 !important;
+  box-shadow: inset 0 0 0 2px rgba(35, 139, 135, 0.11);
+  transform: none;
+  z-index: 1;
+}
+
+@media (max-width: 900px) {
+  .heatmap td.schedule-slot-cell {
+    height: 84px;
+  }
+
+  .schedule-slot-card {
+    min-height: 70px;
+    padding: 7px;
+  }
+
+  .schedule-slot-type,
+  .schedule-slot-status {
+    font-size: 8px;
+    padding: 3px 5px;
+  }
+}
+

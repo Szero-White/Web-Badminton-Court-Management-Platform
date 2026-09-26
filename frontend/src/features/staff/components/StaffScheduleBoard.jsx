@@ -1,15 +1,13 @@
+import { useEffect, useMemo, useState } from 'react';
+import ScheduleCourtFilterBar from '../../../components/schedule/ScheduleCourtFilterBar';
 import ScheduleDateNavigator from '../../../components/schedule/ScheduleDateNavigator';
+import ScheduleLegend from '../../../components/schedule/ScheduleLegend';
+import ScheduleSlotCell from '../../../components/schedule/ScheduleSlotCell';
 import { formatTime } from '../../../utils/dateTime';
 
-function buildBookingNote(group) {
+function bookingRangeText(group) {
   if (!group) return '';
-  const start = formatTime(group.start_time);
-  const end = formatTime(group.end_time);
-  const cleanNote = (group.booking_note || '').replace(/Đặt từ \d{2}:\d{2} đến \d{2}:\d{2}\s*\|?\s*/g, '').trim();
-  if (!cleanNote) return `Đặt từ ${start} đến ${end}`;
-  return cleanNote.startsWith('Ghi chú')
-    ? `Đặt từ ${start} đến ${end} | ${cleanNote}`
-    : `Đặt từ ${start} đến ${end} | Ghi chú: ${cleanNote}`;
+  return `${formatTime(group.start_time)} - ${formatTime(group.end_time)}`;
 }
 
 export default function StaffScheduleBoard({
@@ -22,61 +20,95 @@ export default function StaffScheduleBoard({
   groupInfoBySlotId,
   onCellClick
 }) {
+  const [selectedCourtIds, setSelectedCourtIds] = useState([]);
+
+  useEffect(() => {
+    setSelectedCourtIds((current) => current.filter((courtId) => courtColumns.some((court) => String(court.courtId) === String(courtId))));
+  }, [courtColumns]);
+
+  const visibleIndexes = useMemo(() => {
+    if (selectedCourtIds.length === 0) return courtColumns.map((_, index) => index);
+    const selected = new Set(selectedCourtIds.map(String));
+    return courtColumns
+      .map((court, index) => ({ court, index }))
+      .filter(({ court }) => selected.has(String(court.courtId)))
+      .map(({ index }) => index);
+  }, [courtColumns, selectedCourtIds]);
+
+  const visibleCourts = useMemo(() => visibleIndexes.map((index) => courtColumns[index]), [courtColumns, visibleIndexes]);
+  const visibleGrid = useMemo(
+    () => heatmapGrid.map((row) => ({ ...row, cells: visibleIndexes.map((index) => row.cells[index]) })),
+    [heatmapGrid, visibleIndexes]
+  );
+  const courtFilterOptions = useMemo(
+    () => courtColumns.map((court) => ({ value: String(court.courtId), label: court.courtName, description: `Sân ${court.courtId}` })),
+    [courtColumns]
+  );
+  const courtSummary = selectedCourtIds.length === 0
+    ? 'Tất cả sân'
+    : selectedCourtIds.length === 1
+      ? visibleCourts[0]?.courtName || '1 sân đã chọn'
+      : `${selectedCourtIds.length} sân đã chọn`;
+
   return (
     <article className="staff-action-card staff-booking-board">
       <ScheduleDateNavigator
         value={viewDay}
         onChange={setViewDay}
+        eyebrow="Lịch theo ngày"
         title="Bảng sân theo giờ"
-        description="Bấm ô đã đặt để chọn booking, bấm ô trống để mở hộp đặt sân."
-      />
+        description="Bấm ô trống để đặt sân cho khách; bấm ô đã đặt để xem và xử lý booking."
+      >
+        <ScheduleCourtFilterBar
+          options={courtFilterOptions}
+          selectedValues={selectedCourtIds}
+          onChange={setSelectedCourtIds}
+          triggerLabel={courtSummary}
+          visibleCourtCount={visibleCourts.length}
+          totalCourtCount={courtColumns.length}
+          slotCount={heatmapGrid.length}
+        />
+      </ScheduleDateNavigator>
+
+      <ScheduleLegend />
 
       <div className="heatmap-wrapper staff-heatmap-wrap">
         <table className="heatmap staff-heatmap-table">
           <thead>
             <tr>
               <th className="time-header">Giờ</th>
-              {courtColumns.map((court) => (
+              {visibleCourts.map((court) => (
                 <th key={court.courtId} className="court-header">
-                  <div className="court-header-content"><strong>{court.courtName}</strong><small>Sân {court.courtId}</small></div>
+                  <div className="court-header-content">
+                    <strong>{court.courtName}</strong>
+                    <small>Sân {court.courtId}</small>
+                  </div>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {heatmapGrid.map(({ time, label, cells }) => (
+            {visibleGrid.map(({ time, label, cells }) => (
               <tr key={time} className="heatmap-row">
                 <td className="time-cell">{label}</td>
                 {cells.map((slot, index) => {
-                  if (!slot) return <td key={`${time}-${index}`} className="heatmap-cell empty">-</td>;
-                  if (!slot.booked) {
-                    return (
-                      <td key={slot.id || `${time}-${index}`} className="heatmap-cell free">
-                        <button className="cell-button" type="button" onClick={() => onCellClick(slot)}>
-                          <span className="cell-price">{Number(slot.price || 0).toLocaleString('vi-VN')}</span>
-                          <span className="cell-label">Đặt</span>
-                        </button>
-                      </td>
-                    );
+                  if (!slot) {
+                    return <ScheduleSlotCell key={`${time}-${index}`} slot={null} />;
                   }
 
-                  const isSelected = selectedBookingSlotIds.has(String(slot.id));
                   const groupInfo = groupInfoBySlotId?.get?.(String(slot.id));
                   const group = bookingGroups.find((item) => item.groupKey === groupInfo?.groupKey);
-                  const noteText = buildBookingNote(group);
                   return (
-                    <td
+                    <ScheduleSlotCell
                       key={slot.id || `${time}-${index}`}
-                      className={`heatmap-cell booked ${slot.customer_type === 'monthly' ? 'customer-monthly' : 'customer-walkin'} ${isSelected ? 'is-selected' : ''}`}
-                      onClick={() => onCellClick(slot)}
-                    >
-                      <div className="cell-content">
-                        <span className="booking-code">{slot.customer_name || 'Khách'}</span>
-                        <span className="booking-time">{slot.customer_type === 'monthly' ? 'Khách tháng' : 'Khách vãng lai'}</span>
-                        <span className="booking-time">{slot.booking_code || 'Booking'}{(groupInfo?.slotCount || 1) > 1 ? ` (${groupInfo.slotCount} slot)` : ''}{noteText ? ' 📝' : ''}</span>
-                        {noteText ? <span className="staff-slot-note">{noteText}</span> : null}
-                      </div>
-                    </td>
+                      slot={slot}
+                      mode="manage"
+                      selected={selectedBookingSlotIds.has(String(slot.id))}
+                      onSelect={onCellClick}
+                      slotCount={groupInfo?.slotCount || 1}
+                      rangeText={bookingRangeText(group)}
+                      note={group?.booking_note?.trim() || ''}
+                    />
                   );
                 })}
               </tr>
