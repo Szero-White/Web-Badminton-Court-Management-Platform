@@ -113,16 +113,25 @@ func (s *CourtService) PublicDaySlots(day time.Time) ([]repository.PublicSlotDay
 	}
 	result := make([]repository.PublicSlotDayView, 0, len(rows))
 	for _, row := range rows {
-		status := "available"
-		if row.Booked {
-			status = "booked"
-		}
-		result = append(result, repository.PublicSlotDayView{
-			ID: row.ID, CourtID: row.CourtID, CourtName: row.CourtName, CourtType: row.CourtType,
-			StartTime: row.StartTime, EndTime: row.EndTime, Price: row.Price, Booked: row.Booked, Status: status,
-		})
+		result = append(result, toPublicSlotDayView(row))
 	}
 	return result, nil
+}
+
+func toPublicSlotDayView(row repository.SlotDayView) repository.PublicSlotDayView {
+	status := "available"
+	customerType := ""
+	if row.Booked {
+		status = row.Status
+		if row.CustomerType != nil {
+			customerType = *row.CustomerType
+		}
+	}
+	return repository.PublicSlotDayView{
+		ID: row.ID, CourtID: row.CourtID, CourtName: row.CourtName, CourtType: row.CourtType,
+		StartTime: row.StartTime, EndTime: row.EndTime, Price: row.Price, Booked: row.Booked,
+		CustomerType: customerType, Status: status,
+	}
 }
 
 func (s *CourtService) EnsureDaySlots(day time.Time, intervalMin int, peakStart, peakEnd int, peakMultiplier float64) error {

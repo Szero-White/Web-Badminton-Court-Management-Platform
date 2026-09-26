@@ -32,15 +32,16 @@ type SlotDayView struct {
 }
 
 type PublicSlotDayView struct {
-	ID        uint      `json:"id"`
-	CourtID   uint      `json:"court_id"`
-	CourtName string    `json:"court_name"`
-	CourtType string    `json:"court_type"`
-	StartTime time.Time `json:"start_time"`
-	EndTime   time.Time `json:"end_time"`
-	Price     int64     `json:"price"`
-	Booked    bool      `json:"booked"`
-	Status    string    `json:"status"`
+	ID           uint      `json:"id"`
+	CourtID      uint      `json:"court_id"`
+	CourtName    string    `json:"court_name"`
+	CourtType    string    `json:"court_type"`
+	StartTime    time.Time `json:"start_time"`
+	EndTime      time.Time `json:"end_time"`
+	Price        int64     `json:"price"`
+	Booked       bool      `json:"booked"`
+	CustomerType string    `json:"customer_type,omitempty"`
+	Status       string    `json:"status"`
 }
 
 type BookingAdminView struct {

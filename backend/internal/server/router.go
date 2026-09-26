@@ -79,10 +79,9 @@ func registerAPIRoutes(router *gin.Engine, cfg *config.Config, h Handlers) {
 
 	secured := api.Group("")
 	secured.Use(middleware.AuthRequired(cfg.JWTSecret))
-	secured.POST("/bookings/pending", middleware.RequireRoles(models.RoleCustomer), h.Booking.CreatePending)
 	secured.GET("/bookings/me", middleware.RequireRoles(models.RoleCustomer), h.Booking.UserBookings)
 	secured.POST("/bookings/:booking_id/deposit", middleware.RequireRoles(models.RoleStaff, models.RoleAdmin), h.Booking.ConfirmDeposit)
-	secured.POST("/bookings/:booking_id/cancel", middleware.RequireRoles(models.RoleCustomer, models.RoleStaff, models.RoleAdmin), h.Booking.Cancel)
+	secured.POST("/bookings/:booking_id/cancel", middleware.RequireRoles(models.RoleStaff, models.RoleAdmin), h.Booking.Cancel)
 
 	staff := secured.Group("/staff")
 	staff.Use(middleware.RequireRoles(models.RoleStaff, models.RoleAdmin))
