@@ -16,11 +16,11 @@ Base path: `/api/v1`. JSON responses use the project response envelope. Protecte
 
 ## Authenticated customer
 
+The customer portal is read-only for court operations. Customers can authenticate, browse public schedule data, court prices/statuses, and service information. Booking mutations are reserved for Staff/Admin.
+
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/bookings/pending` | Hold a slot |
-| GET | `/bookings/me` | Customer bookings |
-| POST | `/bookings/:booking_id/cancel` | Cancel booking |
+| GET | `/bookings/me` | Read-only customer booking history/details when needed |
 
 ## Staff (staff or admin role where configured)
 
@@ -29,7 +29,8 @@ Base path: `/api/v1`. JSON responses use the project response envelope. Protecte
 | GET | `/staff/slots/day?day=YYYY-MM-DD` | Detailed day schedule for operations |
 | POST | `/staff/checkin` | Find/check in booking |
 | POST | `/staff/bookings/create` | Create booking for customer |
-| POST | `/bookings/:booking_id/deposit` | Confirm deposit/payment (staff/admin only) |
+| POST | `/bookings/:booking_id/deposit` | Confirm deposit/payment |
+| POST | `/bookings/:booking_id/cancel` | Cancel booking |
 | PUT | `/staff/bookings/:booking_id` | Update booking |
 | GET | `/staff/beverages` | Beverage inventory |
 | POST | `/staff/beverages/sell` | Record beverage sale |

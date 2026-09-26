@@ -16,7 +16,7 @@ Local demo setup can seed these accounts automatically:
 |---|---|---|---|
 | Admin | `admin@badminton.demo` | `Admin@12345` | Dashboard, booking desk, courts, staff, beverages, revenue |
 | Staff | `staff@badminton.demo` | `Staff@12345` | Booking operations, check-in, beverage counter, shift transactions |
-| Customer | `customer@badminton.demo` | `Customer@12345` | Browse schedule, place booking holds, view/cancel personal bookings |
+| Customer | `customer@badminton.demo` | `Customer@12345` | Read-only schedule, court pricing/status, beverage/service information |
 
 > Demo credentials are for local/demo environments only. Never reuse them in production.
 
@@ -247,11 +247,11 @@ Production requirements:
 ## Main features
 
 ### Customer
-- View court schedule by date.
-- Register/login as customer.
-- Place a temporary booking hold.
-- View personal booking status.
-- View personal bookings and cancel subject to policy.
+- View the court schedule by date in read-only mode.
+- Filter one or multiple courts and review current prices/statuses.
+- See whether a slot is free, assigned to a walk-in customer, or assigned to a monthly customer without exposing private customer details.
+- Browse beverage/service information.
+- Booking creation, updates, deposits, check-in, and cancellation are intentionally handled by Staff/Admin at the counter.
 
 ### Staff
 - Create bookings for walk-in/monthly customers.

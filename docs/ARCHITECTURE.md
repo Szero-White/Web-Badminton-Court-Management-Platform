@@ -65,3 +65,12 @@ Court pricing follows an explicit snapshot policy:
 5. If a future booking is canceled or a pending hold expires, the released slot is synchronized to the current court price before it is shown/booked again.
 
 This separates mutable future pricing from historical accounting data and prevents a later price update from changing the value of an existing booking.
+
+## Booking role boundary
+
+Court scheduling follows a clear role boundary:
+
+1. Customer-facing schedule pages are read-only. They expose availability, price, public booking state, and customer category only; private customer name, phone, and booking code are not returned by the public day-schedule view.
+2. Staff and Admin use the same booking-desk interaction pattern and shared schedule-cell presentation. They can create bookings for walk-in or monthly customers and can open booked cells for operational actions.
+3. Customer accounts cannot create booking holds or cancel bookings through mutation endpoints. Booking creation/cancellation is performed by Staff/Admin.
+4. The public schedule may distinguish walk-in vs monthly occupancy for visual planning without exposing personally identifiable booking data.
