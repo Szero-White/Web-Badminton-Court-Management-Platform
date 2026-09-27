@@ -1,177 +1,199 @@
-/* Transaction List */
-.transaction-list {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+/* V12I - professional transaction tables */
+.transaction-list { padding: 0; }
+
+.transaction-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 17px 18px 14px;
+  border-bottom: 1px solid var(--border-soft);
 }
 
-.transaction-list h3 {
-  color: #333;
-  font-size: 16px;
-  margin-bottom: 15px;
-  border-bottom: 2px solid #007bff;
-  padding-bottom: 8px;
+.transaction-list-heading h3 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--text-strong);
+  font-size: 15px;
+}
+
+.transaction-list-heading p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+
+.transaction-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #eef7f6;
+  color: #247b77;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .no-data {
+  display: grid;
+  place-items: center;
+  min-height: 105px;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 13px;
   text-align: center;
-  color: #999;
-  padding: 20px;
-  font-size: 14px;
 }
 
-.table-container {
-  overflow-x: auto;
-}
+.table-container { overflow-x: auto; }
 
 .table-container table {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12.5px;
 }
 
-.table-container thead {
-  background-color: #f0f0f0;
-}
+.table-container thead { background: #f7faf9; }
 
 .table-container th {
-  padding: 10px;
-  text-align: left;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text-secondary);
+  font-size: 11px;
   font-weight: 600;
-  color: #333;
-  border-bottom: 2px solid #ddd;
+  text-align: left;
+  white-space: nowrap;
 }
 
 .table-container td {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(18,35,34,.055);
+  vertical-align: middle;
 }
 
-.table-container tbody tr:hover {
-  background-color: #f9f9f9;
-}
+.table-container tbody tr:last-child td { border-bottom: 0; }
+.table-container tbody tr:hover { background: #f8fbfa; }
 
-.txn-sale {
-  border-left: 3px solid #28a745;
-}
-
-.txn-refund {
-  border-left: 3px solid #dc3545;
-}
-
-.txn-adjust {
-  border-left: 3px solid #ff9800;
-}
+.txn-sale { box-shadow: inset 3px 0 0 rgba(52,145,101,.55); }
+.txn-refund { box-shadow: inset 3px 0 0 rgba(192,92,72,.55); }
+.txn-adjust { box-shadow: inset 3px 0 0 rgba(202,147,59,.58); }
 
 .txn-time {
-  color: #999;
-  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .txn-type {
-  font-weight: 600;
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
 }
+
+.txn-desc { min-width: 150px; }
 
 .txn-amount {
-  font-weight: bold;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.txn-amount.positive {
-  color: #28a745;
-}
-
-.txn-amount.negative {
-  color: #dc3545;
-}
+.txn-amount.positive { color: #27845c; }
+.txn-amount.negative { color: #b85f4e; }
 
 .txn-method {
-  color: #666;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .txn-notes {
-  color: #999;
-  max-width: 150px;
+  max-width: 180px;
   overflow: hidden;
+  color: var(--text-muted);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Reconciliation Tips */
 .reconciliation-tips {
-  background: #e7f3ff;
-  border: 2px solid #007bff;
-  border-radius: 8px;
-  padding: 16px;
-  margin-top: 20px;
+  padding: 18px;
+  background: linear-gradient(145deg,#f6fbfa,#fff);
 }
 
-.reconciliation-tips h4 {
-  color: #0056b3;
+.reconciliation-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 14px;
+}
+
+.reconciliation-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 10px;
+  background: #e6f4f2;
+  color: #1d7874;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.reconciliation-heading h4 {
+  margin: 0;
+  color: var(--text-strong);
   font-size: 14px;
-  margin: 0 0 10px 0;
-  font-weight: 600;
+}
+
+.reconciliation-heading p {
+  margin: 3px 0 0;
+  color: var(--text-muted);
+  font-size: 11.5px;
 }
 
 .reconciliation-tips ul {
-  list-style: none;
-  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 8px 18px;
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .reconciliation-tips li {
-  color: #0056b3;
-  font-size: 13px;
-  margin-bottom: 6px;
-  padding-left: 0;
+  position: relative;
+  margin: 0;
+  padding-left: 14px;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  line-height: 1.55;
 }
 
-.reconciliation-tips li:last-child {
-  margin-bottom: 0;
+.reconciliation-tips li::before {
+  content: '';
+  position: absolute;
+  left: 1px;
+  top: .7em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #6ba8a4;
 }
 
 .loading {
-  text-align: center;
-  padding: 40px;
-  color: #999;
-  font-size: 16px;
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .transaction-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .summary-cards {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .staff-transaction-page {
-    padding: 15px;
-  }
-
-  .staff-transaction-page h1 {
-    font-size: 22px;
-  }
-
-  .summary-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .table-container {
-    font-size: 12px;
-  }
-
+@media (max-width: 760px) {
+  .reconciliation-tips ul { grid-template-columns: 1fr; }
   .table-container th,
-  .table-container td {
-    padding: 8px 5px;
-  }
-
-  .txn-notes {
-    max-width: 80px;
-  }
+  .table-container td { padding: 10px; }
+  .txn-notes { max-width: 110px; }
 }

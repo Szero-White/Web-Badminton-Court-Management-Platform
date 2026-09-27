@@ -19,23 +19,23 @@ export default function ShiftSummaryPanel({ loading, summary, previousSummary, t
   const netRevenue = summary.net_revenue || summary.total || 0;
   const previousNet = previousSummary?.net_revenue || previousSummary?.total || 0;
   const cards = [
-    ['🎾 Thu tiền sân', summary.booking_income, 'Cọc + thanh toán booking trong ca', ''],
-    ['🥤 Bán nước', summary.beverage_income, `${transactions.filter((item) => item.type === 'sale').length} giao dịch bán`, ''],
-    ['💰 Tổng thu', summary.income, 'Tiền sân + bán nước', ''],
-    ['💵 Tiền mặt', summary.cash, '', ''],
-    ['💳 Chuyển khoản', summary.transfer, '', ''],
-    ['↩️ Hoàn tiền', -Math.abs(summary.refund || 0), `${transactions.filter((item) => item.type === 'refund').length} giao dịch hoàn`, 'highlight-refund'],
-    ['📦 Chi phí nhập nước', -Math.abs(summary.stock_in_cost || 0), '', 'highlight-refund'],
-    ['🏦 Chủ đã rút', -Math.abs(summary.owner_withdraw || 0), '', 'highlight-refund'],
-    ['📊 Tổng ròng', netRevenue, 'Doanh thu sau khi trừ hoàn/nhập hàng', 'highlight-total'],
-    ['💵 Số dư tiền mặt', summary.cash_balance || 0, 'Đã trừ tiền chủ rút', 'highlight-total']
+    ['Thu tiền sân', summary.booking_income, 'Cọc + thanh toán booking', 'income'],
+    ['Bán nước', summary.beverage_income, `${transactions.filter((item) => item.type === 'sale').length} giao dịch bán`, 'income'],
+    ['Tổng thu', summary.income, 'Tiền sân + bán nước', 'income'],
+    ['Tiền mặt', summary.cash, 'Đã thu bằng tiền mặt', 'neutral'],
+    ['Chuyển khoản', summary.transfer, 'Đã thu qua chuyển khoản', 'neutral'],
+    ['Hoàn tiền', -Math.abs(summary.refund || 0), `${transactions.filter((item) => item.type === 'refund').length} giao dịch hoàn`, 'expense'],
+    ['Chi phí nhập nước', -Math.abs(summary.stock_in_cost || 0), 'Chi phí nhập hàng trong ca', 'expense'],
+    ['Chủ đã rút', -Math.abs(summary.owner_withdraw || 0), 'Tiền mặt chủ đã rút', 'expense'],
+    ['Tổng ròng', netRevenue, 'Sau hoàn tiền và chi phí', 'primary'],
+    ['Số dư tiền mặt', summary.cash_balance || 0, 'Sau khi trừ tiền chủ rút', 'primary']
   ];
 
   return (
     <div className="transaction-summary">
       <div className="summary-cards">
-        {cards.map(([label, value, detail, className]) => (
-          <article className={`summary-card ${className}`.trim()} key={label}>
+        {cards.map(([label, value, detail, tone]) => (
+          <article className={`summary-card summary-card-${tone}`} key={label}>
             <div className="card-label">{label}</div>
             <div className="card-value">{Number(value) < 0 ? '-' : ''}₫{money(Math.abs(value))}</div>
             {detail ? <div className="card-detail">{detail}</div> : null}
@@ -45,7 +45,7 @@ export default function ShiftSummaryPanel({ loading, summary, previousSummary, t
 
 
       <section className="transaction-list">
-        <h3>🎾 Thu tiền sân trong ca ({shiftLabel(currentShift)})</h3>
+        <div className="transaction-list-heading"><div><h3>Thu tiền sân</h3><p>{shiftLabel(currentShift)} · các khoản cọc và thanh toán booking</p></div><span className="transaction-count">{(summary.booking_payments || []).length}</span></div>
         {(summary.booking_payments || []).length === 0 ? <div className="no-data">Chưa có khoản thu tiền sân trong ca này</div> : (
           <div className="table-container">
             <table>
@@ -70,7 +70,7 @@ export default function ShiftSummaryPanel({ loading, summary, previousSummary, t
       </section>
 
       <section className="transaction-list">
-        <h3>📝 Giao dịch trong ca ({shiftLabel(currentShift)})</h3>
+        <div className="transaction-list-heading"><div><h3>Giao dịch trong ca</h3><p>{shiftLabel(currentShift)} · bán hàng, hoàn tiền và điều chỉnh</p></div><span className="transaction-count">{transactions.length}</span></div>
         {transactions.length === 0 ? <div className="no-data">Chưa có giao dịch trong ca này</div> : (
           <div className="table-container">
             <table>
@@ -96,7 +96,7 @@ export default function ShiftSummaryPanel({ loading, summary, previousSummary, t
       </section>
 
       <section className="reconciliation-tips">
-        <h4>✓ Checklist đối soát ca</h4>
+        <div className="reconciliation-heading"><span className="reconciliation-icon" aria-hidden="true">✓</span><div><h4>Checklist đối soát ca</h4><p>Kiểm tra nhanh trước khi bàn giao ca</p></div></div>
         <ul>
           <li>📊 Đối chiếu <strong>Tổng ròng</strong> (₫{money(netRevenue)}) với tiền thực nhận</li>
           <li>💵 Tổng hợp cả tiền sân và quầy nước; tách riêng tiền mặt (₫{money(summary.cash)}) và chuyển khoản (₫{money(summary.transfer)})</li>

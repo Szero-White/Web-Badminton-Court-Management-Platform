@@ -13,8 +13,8 @@ export default function TransactionForms({
 }) {
   return (
     <div className="transaction-forms">
-      <section className="form-card">
-        <h2>📦 Ghi nhận bán hàng</h2>
+      <section className="form-card form-card-sale">
+        <div className="form-card-heading"><span className="form-card-icon" aria-hidden="true">↗</span><div><h2>Ghi nhận bán hàng</h2><p>Doanh thu phát sinh ngoài tiền sân</p></div></div>
         <form onSubmit={onSaleSubmit}>
           <div className="form-group">
             <label>Nội dung bán *</label>
@@ -74,8 +74,8 @@ export default function TransactionForms({
         </form>
       </section>
 
-      <section className="form-card">
-        <h2>↩️ Ghi nhận hoàn tiền</h2>
+      <section className="form-card form-card-refund">
+        <div className="form-card-heading"><span className="form-card-icon" aria-hidden="true">↩</span><div><h2>Ghi nhận hoàn tiền</h2><p>Ghi nhận khoản tiền trả lại cho khách</p></div></div>
         <form onSubmit={onRefundSubmit}>
           <div className="form-group">
             <label>Lý do *</label>
@@ -120,8 +120,8 @@ export default function TransactionForms({
         </form>
       </section>
 
-      <section className="form-card">
-        <h2>🏦 Chủ rút tiền mặt</h2>
+      <section className="form-card form-card-withdraw">
+        <div className="form-card-heading"><span className="form-card-icon" aria-hidden="true">−</span><div><h2>Chủ rút tiền mặt</h2><p>Điều chỉnh số dư tiền mặt tại quầy</p></div></div>
         <form onSubmit={onOwnerWithdrawSubmit}>
           <div className="form-group">
             <label>Số tiền chủ rút (₫) *</label>

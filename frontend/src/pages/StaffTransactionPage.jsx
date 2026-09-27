@@ -7,7 +7,6 @@ import { staffApi } from '../services/api';
 import { getPreviousShift, getShiftName, shiftLabel } from '../utils/shift';
 import './StaffTransactionPage.css';
 import './StaffTransactionTable.css';
-import useAppNotice from '../hooks/useAppNotice';
 
 
 function localDateString(date = new Date()) {
@@ -33,6 +32,7 @@ export default function StaffTransactionPage() {
   const previousShift = getPreviousShift(currentShift);
   const businessDay = localDateString();
   const previousBusinessDay = previousShiftBusinessDay(currentShift);
+  const staffName = localStorage.getItem('user_name') || 'Nhân viên';
   const [saleForm, setSaleForm] = useState({ description: '', amount: '', paymentMethod: 'cash', notes: '', shift: currentShift });
   const [refundForm, setRefundForm] = useState({ description: '', amount: '', notes: '', shift: currentShift });
   const [ownerWithdrawForm, setOwnerWithdrawForm] = useState({ amount: '', notes: '', shift: currentShift });
@@ -40,17 +40,8 @@ export default function StaffTransactionPage() {
   const [summary, setSummary] = useState(null);
   const [previousSummary, setPreviousSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { notice, setNotice, clearNotice } = useAppNotice();
-  const error = notice?.tone === 'error' ? notice.text : '';
-  const successMessage = notice?.tone === 'success' ? notice.text : '';
-  const setError = (value) => {
-    if (!value) { clearNotice(); return; }
-    setNotice({ text: value, tone: 'error' });
-  };
-  const setSuccessMessage = (value) => {
-    if (!value) { clearNotice(); return; }
-    setNotice({ text: value, tone: 'success' });
-  };
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     loadShiftData();
@@ -69,6 +60,7 @@ export default function StaffTransactionPage() {
       setSummary(current);
       setPreviousSummary(previousResponse?.data?.data || {});
       setTransactions(current.transactions || []);
+      setError('');
     } catch (requestError) {
       setError(requestError?.response?.data?.error?.message || 'Không tải được dữ liệu ca.');
     } finally {
@@ -78,6 +70,7 @@ export default function StaffTransactionPage() {
 
   function showSuccess(message) {
     setSuccessMessage(message);
+    window.setTimeout(() => setSuccessMessage(''), 3000);
   }
 
   async function handleSaleSubmit(event) {
@@ -148,15 +141,33 @@ export default function StaffTransactionPage() {
     }
   }
 
+  const displayDate = new Date(`${businessDay}T00:00:00`).toLocaleDateString('vi-VN');
+
   return (
-    <div className="staff-transaction-page">
-      <div className="transaction-header">
-        <h1>💰 {localStorage.getItem('user_name') || 'Nhân viên'} - Sổ Thu Chi ({shiftLabel(currentShift)} · {new Date(`${businessDay}T00:00:00`).toLocaleDateString('vi-VN')})</h1>
+    <main className="staff-transaction-page">
+      <header className="transaction-page-header">
+        <div className="transaction-page-heading">
+          <span className="transaction-page-eyebrow">Vận hành ca làm việc</span>
+          <h1>Sổ thu chi</h1>
+          <p>Theo dõi doanh thu, hoàn tiền và dòng tiền trong ca hiện tại.</p>
+          <div className="transaction-context">
+            <span className="transaction-context-chip"><span className="context-dot" aria-hidden="true" />{staffName}</span>
+            <span className="transaction-context-chip">{shiftLabel(currentShift)}</span>
+            <span className="transaction-context-chip">{displayDate}</span>
+          </div>
+        </div>
         <PageBackButton to="/staff" label="Quay lại Đặt sân" />
-      </div>
-      <AppToast message={notice} onDismiss={clearNotice} />
-      <div className="transaction-grid">
-        <TransactionForms
+      </header>
+
+      <AppToast message={error || successMessage} tone={error ? 'error' : 'success'} />
+
+      <div className="transaction-workspace">
+        <aside className="transaction-entry-column" aria-label="Ghi nhận giao dịch">
+          <div className="transaction-section-heading">
+            <span>Ghi nhận giao dịch</span>
+            <small>Nhập nghiệp vụ phát sinh trong ca</small>
+          </div>
+          <TransactionForms
           saleForm={saleForm}
           setSaleForm={setSaleForm}
           refundForm={refundForm}
@@ -166,8 +177,15 @@ export default function StaffTransactionPage() {
           onSaleSubmit={handleSaleSubmit}
           onRefundSubmit={handleRefundSubmit}
           onOwnerWithdrawSubmit={handleOwnerWithdrawSubmit}
-        />
-        <ShiftSummaryPanel
+          />
+        </aside>
+
+        <section className="transaction-overview-column" aria-label="Tổng hợp ca">
+          <div className="transaction-section-heading">
+            <span>Tổng quan ca</span>
+            <small>Dữ liệu tự làm mới mỗi 30 giây</small>
+          </div>
+          <ShiftSummaryPanel
           loading={loading}
           summary={summary}
           previousSummary={previousSummary}
@@ -175,8 +193,9 @@ export default function StaffTransactionPage() {
           currentShift={currentShift}
           previousShift={previousShift}
           shiftLabel={shiftLabel}
-        />
+          />
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
