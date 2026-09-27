@@ -4,12 +4,13 @@ export const staffApi = {
   checkin: (codeOrPhone) => api.post('/staff/checkin', { code_or_phone: codeOrPhone }),
   createBookingForCustomer: (payload) => api.post('/staff/bookings/create', payload),
   updateBooking: (bookingId, payload) => api.put(`/staff/bookings/${bookingId}`, payload),
+  updateBookingGroup: (bookingId, payload) => api.put(`/staff/bookings/${bookingId}/group`, payload),
   listBeverageStock: () => api.get('/staff/beverages'),
   sellBeverage: (payload) => api.post('/staff/beverages/sell', payload),
   restockBeverage: (payload) => api.post('/staff/beverages/restock', payload),
   ownerWithdrawCash: (payload) => api.post('/staff/transactions', { ...payload, type: 'owner_withdraw', payment_method: 'cash' }),
   createTransaction: (payload) => api.post('/staff/transactions', payload),
   createRefund: (payload) => api.post('/staff/transactions/refund', payload),
-  getShiftSummary: (shift) => api.get('/staff/shift-summary', { params: { shift } }),
-  listTransactions: (shift) => api.get('/staff/transactions', { params: { shift } })
+  getShiftSummary: (shift, day) => api.get('/staff/shift-summary', { params: { shift, day } }),
+  listTransactions: (shift, day) => api.get('/staff/transactions', { params: { shift, day } })
 };

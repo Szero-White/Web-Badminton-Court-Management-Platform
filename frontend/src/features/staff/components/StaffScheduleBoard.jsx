@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import ScheduleCourtFilterBar from '../../../components/schedule/ScheduleCourtFilterBar';
 import ScheduleDateNavigator from '../../../components/schedule/ScheduleDateNavigator';
-import ScheduleLegend from '../../../components/schedule/ScheduleLegend';
 import ScheduleSlotCell from '../../../components/schedule/ScheduleSlotCell';
 import { formatTime } from '../../../utils/dateTime';
 
@@ -70,7 +69,6 @@ export default function StaffScheduleBoard({
         />
       </ScheduleDateNavigator>
 
-      <ScheduleLegend />
 
       <div className="heatmap-wrapper staff-heatmap-wrap">
         <table className="heatmap staff-heatmap-table">
@@ -108,6 +106,7 @@ export default function StaffScheduleBoard({
                       slotCount={groupInfo?.slotCount || 1}
                       rangeText={bookingRangeText(group)}
                       note={group?.booking_note?.trim() || ''}
+                      bookingGroup={group}
                     />
                   );
                 })}

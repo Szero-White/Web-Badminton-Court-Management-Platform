@@ -9,40 +9,41 @@ import (
 	"time"
 
 	"badminton-platform/backend/internal/models"
-	"badminton-platform/backend/internal/pricing"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-func (s *BookingService) CreatePendingBookingForPhone(ctx context.Context, phone, fullName, customerType string, slotID uint, notes string) (*models.Booking, error) {
+func (s *BookingService) CreatePendingBookingForPhone(ctx context.Context, phone, fullName, customerType, displayColor string, slotID uint, notes string) (*models.Booking, error) {
 	user, err := s.ensureCustomerByPhone(phone, fullName)
 	if err != nil {
 		return nil, err
 	}
-	return s.CreatePendingBooking(ctx, user.ID, slotID, customerType, notes)
+	return s.CreatePendingBooking(ctx, user.ID, slotID, customerType, displayColor, notes)
 }
 
-func (s *BookingService) CreatePendingBookingRangeForPhone(ctx context.Context, phone, fullName, customerType string, startSlotID, endSlotID uint, notes string) ([]*models.Booking, error) {
+func (s *BookingService) CreatePendingBookingRangeForPhone(ctx context.Context, phone, fullName, customerType, displayColor string, startSlotID, endSlotID uint, notes string) ([]*models.Booking, error) {
 	user, err := s.ensureCustomerByPhone(phone, fullName)
 	if err != nil {
 		return nil, err
 	}
-	return s.CreatePendingBookingRange(ctx, user.ID, startSlotID, endSlotID, customerType, notes)
+	return s.CreatePendingBookingRange(ctx, user.ID, startSlotID, endSlotID, customerType, displayColor, notes)
 }
 
-func (s *BookingService) createPendingBookingWithTx(tx *gorm.DB, userID uint, slot *models.TimeSlot, customerType, notes string) (*models.Booking, error) {
+func (s *BookingService) createPendingBookingWithTx(tx *gorm.DB, userID uint, slot *models.TimeSlot, customerType, displayColor, bookingGroupID, notes string) (*models.Booking, error) {
 	booking := &models.Booking{
-		BookingCode:  fmt.Sprintf("BK-%s", strings.ToUpper(uuid.NewString()[:8])),
-		UserID:       userID,
-		CourtID:      slot.CourtID,
-		TimeSlotID:   slot.ID,
-		CustomerType: normalizeCustomerType(customerType),
-		Notes:        strings.TrimSpace(notes),
-		Status:       models.BookingPending,
-		TotalPrice:   slot.Price,
-		DepositPaid:  0,
-		RemainingDue: slot.Price,
+		BookingCode:    fmt.Sprintf("BK-%s", strings.ToUpper(uuid.NewString()[:8])),
+		BookingGroupID: bookingGroupID,
+		DisplayColor:   normalizeBookingColor(displayColor),
+		UserID:         userID,
+		CourtID:        slot.CourtID,
+		TimeSlotID:     slot.ID,
+		CustomerType:   normalizeCustomerType(customerType),
+		Notes:          strings.TrimSpace(notes),
+		Status:         models.BookingPending,
+		TotalPrice:     slot.Price,
+		DepositPaid:    0,
+		RemainingDue:   slot.Price,
 	}
 	expiresAt := time.Now().Add(time.Duration(s.cfg.BookingHoldMinutes) * time.Minute)
 	booking.ExpiresAt = &expiresAt
@@ -94,7 +95,7 @@ func (s *BookingService) releaseLock(ctx context.Context, key string) {
 	}
 }
 
-func (s *BookingService) CreatePendingBooking(ctx context.Context, userID, slotID uint, customerType, notes string) (*models.Booking, error) {
+func (s *BookingService) CreatePendingBooking(ctx context.Context, userID, slotID uint, customerType, displayColor, notes string) (*models.Booking, error) {
 	if err := s.bookings.ExpirePendingByTimeSlot(slotID, time.Now()); err != nil {
 		return nil, err
 	}
@@ -126,28 +127,27 @@ func (s *BookingService) CreatePendingBooking(ctx context.Context, userID, slotI
 		// Refresh the price immediately before booking. This guarantees that a
 		// slot released after cancellation/hold expiry uses the court's current
 		// price, while existing bookings keep their original TotalPrice snapshot.
-		slot.Price = pricing.CourtSlotPrice(
-			slot.Court.BasePrice,
-			slot.StartTime,
-			pricing.DefaultPeakStartHour,
-			pricing.DefaultPeakEndHour,
-			pricing.DefaultPeakMultiplier,
-		)
+		currentPrice, priceErr := s.currentSlotPrice(slot)
+		if priceErr != nil {
+			return priceErr
+		}
+		slot.Price = currentPrice
 		if err := slots.UpdatePrice(slot.ID, slot.Price); err != nil {
 			return err
 		}
 
-		created, err = s.createPendingBookingWithTx(tx, userID, slot, customerType, notes)
+		created, err = s.createPendingBookingWithTx(tx, userID, slot, customerType, displayColor, uuid.NewString(), notes)
 		return err
 	})
 	if err != nil {
 		s.releaseLock(ctx, lockKey)
 		return nil, err
 	}
+	s.releaseLock(ctx, lockKey)
 	return created, nil
 }
 
-func (s *BookingService) CreatePendingBookingRange(ctx context.Context, userID, startSlotID, endSlotID uint, customerType, notes string) ([]*models.Booking, error) {
+func (s *BookingService) CreatePendingBookingRange(ctx context.Context, userID, startSlotID, endSlotID uint, customerType, displayColor, notes string) ([]*models.Booking, error) {
 	if startSlotID == 0 || endSlotID == 0 {
 		return nil, errors.New("start and end slot are required")
 	}
@@ -202,6 +202,7 @@ func (s *BookingService) CreatePendingBookingRange(ctx context.Context, userID, 
 	}
 
 	created := make([]*models.Booking, 0, len(selected))
+	bookingGroupID := uuid.NewString()
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		bookings := s.bookings.WithTx(tx)
 		slots := s.slots.WithTx(tx)
@@ -212,18 +213,16 @@ func (s *BookingService) CreatePendingBookingRange(ctx context.Context, userID, 
 				return fmt.Errorf("slot %s is already booked", formatBookingClock(slot.StartTime))
 			}
 
-			slot.Price = pricing.CourtSlotPrice(
-				startSlot.Court.BasePrice,
-				slot.StartTime,
-				pricing.DefaultPeakStartHour,
-				pricing.DefaultPeakEndHour,
-				pricing.DefaultPeakMultiplier,
-			)
+			currentPrice, priceErr := s.currentSlotPrice(&slot)
+			if priceErr != nil {
+				return priceErr
+			}
+			slot.Price = currentPrice
 			if err := slots.UpdatePrice(slot.ID, slot.Price); err != nil {
 				return err
 			}
 
-			booking, createErr := s.createPendingBookingWithTx(tx, userID, &slot, customerType, combinedNote)
+			booking, createErr := s.createPendingBookingWithTx(tx, userID, &slot, customerType, displayColor, bookingGroupID, combinedNote)
 			if createErr != nil {
 				return createErr
 			}
@@ -235,6 +234,7 @@ func (s *BookingService) CreatePendingBookingRange(ctx context.Context, userID, 
 		releaseLocks(ctx, s, lockKeys)
 		return nil, err
 	}
+	releaseLocks(ctx, s, lockKeys)
 	return created, nil
 }
 

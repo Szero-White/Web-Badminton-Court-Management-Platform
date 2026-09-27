@@ -29,6 +29,7 @@ type createPendingForCustomerRequest struct {
 	CustomerPhone   string `json:"customer_phone" binding:"required"`
 	CustomerName    string `json:"customer_name"`
 	CustomerType    string `json:"customer_type"`
+	DisplayColor    string `json:"display_color"`
 	Notes           string `json:"notes"`
 }
 
@@ -39,10 +40,24 @@ func (h *BookingHandler) CreatePendingForCustomer(c *gin.Context) {
 		return
 	}
 
+	actorID, actorRole, ok := bookingActor(c)
+	if !ok {
+		return
+	}
+
 	if req.StartTimeSlotID > 0 && req.EndTimeSlotID > 0 {
-		bookings, err := h.booking.CreatePendingBookingRangeForPhone(c.Request.Context(), req.CustomerPhone, req.CustomerName, req.CustomerType, req.StartTimeSlotID, req.EndTimeSlotID, req.Notes)
+		bookings, err := h.booking.CreatePendingBookingRangeForPhone(c.Request.Context(), req.CustomerPhone, req.CustomerName, req.CustomerType, req.DisplayColor, req.StartTimeSlotID, req.EndTimeSlotID, req.Notes)
 		if err != nil {
 			response.Error(c, http.StatusConflict, "CREATE_BOOKING_FAILED", err.Error())
+			return
+		}
+		ids := make([]uint, 0, len(bookings))
+		for _, booking := range bookings {
+			ids = append(ids, booking.ID)
+		}
+		bookings, err = h.booking.ConfirmManagedBookings(c.Request.Context(), actorID, actorRole, ids)
+		if err != nil {
+			response.Error(c, http.StatusConflict, "CONFIRM_BOOKING_FAILED", err.Error())
 			return
 		}
 		response.JSON(c, http.StatusCreated, gin.H{"bookings": bookings})
@@ -54,13 +69,17 @@ func (h *BookingHandler) CreatePendingForCustomer(c *gin.Context) {
 		return
 	}
 
-	booking, err := h.booking.CreatePendingBookingForPhone(c.Request.Context(), req.CustomerPhone, req.CustomerName, req.CustomerType, req.TimeSlotID, req.Notes)
+	booking, err := h.booking.CreatePendingBookingForPhone(c.Request.Context(), req.CustomerPhone, req.CustomerName, req.CustomerType, req.DisplayColor, req.TimeSlotID, req.Notes)
 	if err != nil {
 		response.Error(c, http.StatusConflict, "CREATE_BOOKING_FAILED", err.Error())
 		return
 	}
-
-	response.JSON(c, http.StatusCreated, booking)
+	confirmed, err := h.booking.ConfirmManagedBookings(c.Request.Context(), actorID, actorRole, []uint{booking.ID})
+	if err != nil {
+		response.Error(c, http.StatusConflict, "CONFIRM_BOOKING_FAILED", err.Error())
+		return
+	}
+	response.JSON(c, http.StatusCreated, confirmed[0])
 }
 
 type confirmDepositRequest struct {
@@ -132,12 +151,30 @@ type checkInRequest struct {
 }
 
 type updateBookingRequest struct {
-	TimeSlotID    *uint   `json:"time_slot_id"`
-	CustomerPhone *string `json:"customer_phone"`
-	CustomerName  *string `json:"customer_name"`
-	CustomerType  *string `json:"customer_type"`
-	Notes         *string `json:"notes"`
-	DepositTotal  *int64  `json:"deposit_total"`
+	TimeSlotID              *uint   `json:"time_slot_id"`
+	CustomerPhone           *string `json:"customer_phone"`
+	CustomerName            *string `json:"customer_name"`
+	CustomerType            *string `json:"customer_type"`
+	Notes                   *string `json:"notes"`
+	PaymentTotal            *int64  `json:"payment_total"`
+	DepositTotal            *int64  `json:"deposit_total"` // backward compatible alias
+	PaymentMethod           *string `json:"payment_method"`
+	PaymentReference        *string `json:"payment_reference"`
+	PaymentAdjustmentReason *string `json:"payment_adjustment_reason"`
+	DisplayColor            *string `json:"display_color"`
+}
+
+type updateBookingGroupRequest struct {
+	TimeSlotIDs             []uint  `json:"time_slot_ids" binding:"required"`
+	CustomerPhone           *string `json:"customer_phone"`
+	CustomerName            *string `json:"customer_name"`
+	CustomerType            *string `json:"customer_type"`
+	Notes                   *string `json:"notes"`
+	PaymentTotal            *int64  `json:"payment_total"`
+	PaymentMethod           *string `json:"payment_method"`
+	PaymentReference        *string `json:"payment_reference"`
+	PaymentAdjustmentReason *string `json:"payment_adjustment_reason"`
+	DisplayColor            *string `json:"display_color"`
 }
 
 type adminCancelBookingRequest struct {
@@ -195,6 +232,14 @@ func (h *BookingHandler) AdminListBookings(c *gin.Context) {
 }
 
 func (h *BookingHandler) AdminUpdateBooking(c *gin.Context) {
+	h.updateBooking(c)
+}
+
+func (h *BookingHandler) StaffUpdateBooking(c *gin.Context) {
+	h.updateBooking(c)
+}
+
+func (h *BookingHandler) updateBooking(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("booking_id"), 10, 64)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", "invalid booking_id")
@@ -207,49 +252,92 @@ func (h *BookingHandler) AdminUpdateBooking(c *gin.Context) {
 		return
 	}
 
-	booking, err := h.booking.UpdateBooking(c.Request.Context(), uint(id), service.BookingUpdateInput{
-		TimeSlotID:    req.TimeSlotID,
-		CustomerPhone: req.CustomerPhone,
-		CustomerName:  req.CustomerName,
-		CustomerType:  req.CustomerType,
-		Notes:         req.Notes,
-		DepositTotal:  req.DepositTotal,
+	actorID, actorRole, ok := bookingActor(c)
+	if !ok {
+		return
+	}
+
+	paymentTotal := req.PaymentTotal
+	if paymentTotal == nil {
+		paymentTotal = req.DepositTotal
+	}
+
+	booking, err := h.booking.UpdateBooking(c.Request.Context(), actorID, actorRole, uint(id), service.BookingUpdateInput{
+		TimeSlotID:              req.TimeSlotID,
+		CustomerPhone:           req.CustomerPhone,
+		CustomerName:            req.CustomerName,
+		CustomerType:            req.CustomerType,
+		Notes:                   req.Notes,
+		PaymentTotal:            paymentTotal,
+		PaymentMethod:           req.PaymentMethod,
+		PaymentReference:        req.PaymentReference,
+		PaymentAdjustmentReason: req.PaymentAdjustmentReason,
+		DisplayColor:            req.DisplayColor,
 	})
 	if err != nil {
-		response.Error(c, http.StatusBadRequest, "UPDATE_BOOKING_FAILED", err.Error())
+		status := http.StatusBadRequest
+		if errors.Is(err, service.ErrBookingAccessDenied) {
+			status = http.StatusForbidden
+		}
+		response.Error(c, status, "UPDATE_BOOKING_FAILED", err.Error())
 		return
 	}
 
 	response.JSON(c, http.StatusOK, booking)
 }
 
-func (h *BookingHandler) StaffUpdateBooking(c *gin.Context) {
+func (h *BookingHandler) AdminUpdateBookingGroup(c *gin.Context) {
+	h.updateBookingGroup(c)
+}
+
+func (h *BookingHandler) StaffUpdateBookingGroup(c *gin.Context) {
+	h.updateBookingGroup(c)
+}
+
+func (h *BookingHandler) updateBookingGroup(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("booking_id"), 10, 64)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", "invalid booking_id")
 		return
 	}
 
-	var req updateBookingRequest
+	var req updateBookingGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", err.Error())
 		return
 	}
-
-	booking, err := h.booking.UpdateBooking(c.Request.Context(), uint(id), service.BookingUpdateInput{
-		TimeSlotID:    req.TimeSlotID,
-		CustomerPhone: req.CustomerPhone,
-		CustomerName:  req.CustomerName,
-		CustomerType:  req.CustomerType,
-		Notes:         req.Notes,
-		DepositTotal:  req.DepositTotal,
-	})
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, "UPDATE_BOOKING_FAILED", err.Error())
+	if len(req.TimeSlotIDs) == 0 {
+		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", "time_slot_ids is required")
 		return
 	}
 
-	response.JSON(c, http.StatusOK, booking)
+	actorID, actorRole, ok := bookingActor(c)
+	if !ok {
+		return
+	}
+
+	bookings, err := h.booking.UpdateBookingGroup(c.Request.Context(), actorID, actorRole, uint(id), service.BookingGroupUpdateInput{
+		TimeSlotIDs:             req.TimeSlotIDs,
+		CustomerPhone:           req.CustomerPhone,
+		CustomerName:            req.CustomerName,
+		CustomerType:            req.CustomerType,
+		Notes:                   req.Notes,
+		PaymentTotal:            req.PaymentTotal,
+		PaymentMethod:           req.PaymentMethod,
+		PaymentReference:        req.PaymentReference,
+		PaymentAdjustmentReason: req.PaymentAdjustmentReason,
+		DisplayColor:            req.DisplayColor,
+	})
+	if err != nil {
+		status := http.StatusConflict
+		if errors.Is(err, service.ErrBookingAccessDenied) {
+			status = http.StatusForbidden
+		}
+		response.Error(c, status, "UPDATE_BOOKING_GROUP_FAILED", err.Error())
+		return
+	}
+
+	response.JSON(c, http.StatusOK, gin.H{"bookings": bookings})
 }
 
 func (h *BookingHandler) AdminDeleteBooking(c *gin.Context) {

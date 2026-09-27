@@ -1,67 +1,46 @@
-import { useEffect, useMemo, useState } from 'react';
-import { bookingApi, staffApi } from '../services/api';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { staffApi } from '../services/api';
 import { formatTime, slotMinuteOfDay, todayString } from '../utils/dateTime';
 import { buildHeatmapGrid, compareSlotTime, findBookingGroupForSlot, getAvailableRangeEndSlots, groupBookedSlots } from '../utils/bookingGrid';
-import { buildDepositNote, formatMoney, paymentMethodLabel } from '../utils/formatters';
+import { formatMoney, paymentMethodLabel } from '../utils/formatters';
+import { allocatePaymentAcrossSlots, bookingGroupToForm, createBookingForm, resolvePaymentTotal } from '../utils/bookingForm';
 import StaffOperationsView from '../features/staff/StaffOperationsView';
 import './StaffPage.css';
 import './StaffScheduleBoard.css';
+import useAppNotice from '../hooks/useAppNotice';
+import { getApiErrorMessage } from '../utils/apiErrorMessage';
 
 export default function StaffPage() {
-  const [message, setMessage] = useState('Nhân viên chỉ xử lý vận hành booking, không có quyền cấu hình sân.');
+  const { notice: message, setNotice: setMessage, clearNotice } = useAppNotice({ text: 'Nhân viên chỉ xử lý vận hành booking, không có quyền cấu hình sân.', tone: 'info' });
   const [loading, setLoading] = useState(false);
   const [checkInCode, setCheckInCode] = useState('');
   const [lastCheckin, setLastCheckin] = useState(null);
   const [checkinFeed, setCheckinFeed] = useState([]);
   const [selectedBookingKey, setSelectedBookingKey] = useState(null);
-  const [depositEdit, setDepositEdit] = useState({ amount: '', method: 'transfer', reference: '' });
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
-
-  const [bookingForm, setBookingForm] = useState({
-    day: todayString(),
-    startTimeSlotId: '',
-    endTimeSlotId: 'single',
-    customerPhone: '',
-    customerName: '',
-    customerType: 'walk_in',
-    notes: '',
-    collectDeposit: false,
-    depositAmount: '',
-    depositMethod: 'transfer',
-    depositReference: ''
-  });
+  const [bookingDialogMode, setBookingDialogMode] = useState('create');
+  const [bookingForm, setBookingForm] = useState(createBookingForm({ day: todayString() }));
   const [daySlots, setDaySlots] = useState([]);
   const [viewDay, setViewDay] = useState(todayString());
 
-  const sortedSlots = useMemo(
-    () => [...(daySlots || [])].sort(compareSlotTime),
-    [daySlots]
-  );
+  const sortedSlots = useMemo(() => [...(daySlots || [])].sort(compareSlotTime), [daySlots]);
 
   const groupedSlotsByCourt = useMemo(() => {
     const grouped = new Map();
     sortedSlots.forEach((slot) => {
       const key = `${slot.court_id}`;
-      if (!grouped.has(key)) {
-        grouped.set(key, []);
-      }
+      if (!grouped.has(key)) grouped.set(key, []);
       grouped.get(key).push(slot);
     });
 
     return [...grouped.entries()].map(([courtId, slots]) => {
       const byMinute = new Map();
-      slots.forEach((slot) => {
-        byMinute.set(slotMinuteOfDay(slot.start_time), slot);
-      });
-
+      slots.forEach((slot) => byMinute.set(slotMinuteOfDay(slot.start_time), slot));
       const orderedSlots = [];
       for (let minute = 0; minute < 24 * 60; minute += 30) {
         const slot = byMinute.get(minute);
-        if (slot) {
-          orderedSlots.push(slot);
-        }
+        if (slot) orderedSlots.push(slot);
       }
-
       return {
         courtId,
         courtName: slots[0]?.court_name || `Sân ${courtId}`,
@@ -74,22 +53,12 @@ export default function StaffPage() {
     () => groupedSlotsByCourt.map((group) => ({ courtId: group.courtId, courtName: group.courtName })),
     [groupedSlotsByCourt]
   );
-
-  const heatmapGrid = useMemo(
-    () => buildHeatmapGrid(sortedSlots, courtColumns),
-    [sortedSlots, courtColumns]
-  );
-
-  const bookingGroups = useMemo(
-    () => groupBookedSlots(sortedSlots.filter((slot) => slot.booked)),
-    [sortedSlots]
-  );
-
+  const heatmapGrid = useMemo(() => buildHeatmapGrid(sortedSlots, courtColumns), [sortedSlots, courtColumns]);
+  const bookingGroups = useMemo(() => groupBookedSlots(sortedSlots.filter((slot) => slot.booked)), [sortedSlots]);
   const selectedBooking = useMemo(
-    () => bookingGroups.find((group) => group.groupKey === selectedBookingKey) || bookingGroups[0] || null,
+    () => bookingGroups.find((group) => group.groupKey === selectedBookingKey) || null,
     [bookingGroups, selectedBookingKey]
   );
-
   const selectedBookingSlotIds = useMemo(
     () => new Set(selectedBooking?.slots?.map((s) => String(s.id)) || []),
     [selectedBooking]
@@ -98,51 +67,21 @@ export default function StaffPage() {
   const groupInfoBySlotId = useMemo(() => {
     const map = new Map();
     bookingGroups.forEach((group) => {
-      const slotCount = group.slots?.length || 1;
-      const totalDeposit = group.slots?.reduce((sum, s) => sum + (s.deposit_paid || 0), 0) || 0;
-      const hasNote = !!group.booking_note;
       group.slots?.forEach((slot) => {
-        map.set(String(slot.id), {
-          deposit: totalDeposit,
-          note: group.booking_note,
-          slotCount,
-          hasNote,
-          groupKey: group.groupKey
-        });
+        map.set(String(slot.id), { slotCount: group.slots?.length || 1, groupKey: group.groupKey });
       });
     });
     return map;
   }, [bookingGroups]);
 
   const selectedStartSlot = useMemo(
-    () => sortedSlots.find((slot) => String(slot.id) === String(bookingForm.startTimeSlotId)),
-    [sortedSlots, bookingForm.startTimeSlotId]
+    () => sortedSlots.find((slot) => String(slot.id) === String(bookingForm.startTimeSlotId)) || selectedBooking?.slots?.[0] || null,
+    [sortedSlots, bookingForm.startTimeSlotId, selectedBooking]
   );
-
   const endSlots = useMemo(
-    () => getAvailableRangeEndSlots(sortedSlots, selectedStartSlot),
-    [sortedSlots, selectedStartSlot]
+    () => bookingDialogMode === 'create' ? getAvailableRangeEndSlots(sortedSlots, selectedStartSlot) : [],
+    [sortedSlots, selectedStartSlot, bookingDialogMode]
   );
-
-  function handleDeskCellClick(slot) {
-    if (!slot) {
-      return;
-    }
-
-    if (slot.booked) {
-      setSelectedBookingKey(findBookingGroupForSlot(bookingGroups, slot)?.groupKey || null);
-      return;
-    }
-
-    setBookingForm((prev) => ({
-      ...prev,
-      day: viewDay,
-      startTimeSlotId: String(slot.id),
-      endTimeSlotId: 'single'
-    }));
-    setBookingDialogOpen(true);
-    setMessage(`Đã chọn ${slot.court_name || `Sân ${slot.court_id}`} lúc ${formatTime(slot.start_time)}.`);
-  }
 
   async function loadSlots(day) {
     try {
@@ -150,48 +89,44 @@ export default function StaffPage() {
       const nextSlots = res.data?.data || [];
       setDaySlots(nextSlots);
       const groups = groupBookedSlots(nextSlots.filter((slot) => slot.booked));
-      setSelectedBookingKey((prev) => (prev && groups.some((group) => group.groupKey === prev) ? prev : groups[0]?.groupKey || null));
+      setSelectedBookingKey((prev) => (prev && groups.some((group) => group.groupKey === prev) ? prev : null));
     } catch (error) {
-      setMessage(error?.response?.data?.error?.message || 'Không tải được lịch trong ngày.');
+      setMessage({ text: getApiErrorMessage(error, 'Không tải được lịch trong ngày.'), tone: 'error' });
     }
   }
 
-  async function confirmSelectedDeposit(item) {
-    const targetDeposit = Math.round(Number(depositEdit.amount || 0));
-    if (!Number.isFinite(targetDeposit) || targetDeposit < 0) {
-      setMessage('Vui lòng nhập số tiền cọc hợp lệ.');
+  const loadBookingScheduleSlots = useCallback(async (targetDay) => {
+    const response = await staffApi.getDaySlots(targetDay);
+    return response.data?.data || [];
+  }, []);
+
+  function handleDeskCellClick(slot) {
+    clearNotice();
+    if (!slot) {
+      setMessage({ text: 'Không xác định được khung giờ đã chọn.', tone: 'error' });
       return;
     }
 
-    const maxDeposit = item.slots.reduce((sum, slot) => sum + Math.round(Number(slot.price || 0)), 0);
-    if (targetDeposit > maxDeposit) {
-      setMessage(`Tổng cọc không được vượt quá tổng tiền booking ${formatMoney(maxDeposit)} VND.`);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      let remaining = targetDeposit;
-      for (let index = 0; index < item.booking_ids.length; index += 1) {
-        const bookingId = item.booking_ids[index];
-        const slotPrice = Math.round(Number(item.slots[index]?.price || 0));
-        const depositForBooking = Math.min(remaining, Math.max(0, slotPrice));
-
-        await staffApi.updateBooking(bookingId, {
-          deposit_total: depositForBooking
-        });
-
-        remaining -= depositForBooking;
+    if (slot.booked) {
+      const group = findBookingGroupForSlot(bookingGroups, slot);
+      if (!group) {
+        setMessage({ text: 'Không tìm thấy thông tin booking của khung giờ này. Vui lòng tải lại lịch.', tone: 'error' });
+        return;
       }
-
-      setDepositEdit({ amount: '', method: 'transfer', reference: '' });
-      setMessage(`Đã cập nhật tổng cọc mới: ${formatMoney(targetDeposit)} VND cho booking ${item.booking_code}.`);
-      await loadSlots(viewDay);
-    } catch (error) {
-      setMessage(error?.response?.data?.error?.message || 'Không cập nhật được cọc booking.');
-    } finally {
-      setLoading(false);
+      setSelectedBookingKey(group.groupKey);
+      setBookingDialogMode('edit');
+      setBookingForm(bookingGroupToForm(group));
+      setBookingDialogOpen(true);
+      return;
     }
+
+    setSelectedBookingKey(null);
+    setBookingDialogMode('create');
+    setBookingForm(createBookingForm({
+      day: viewDay,
+      startTimeSlotId: String(slot.id)
+    }));
+    setBookingDialogOpen(true);
   }
 
   async function doCheckin(e) {
@@ -204,36 +139,26 @@ export default function StaffPage() {
         setCheckinFeed((prev) => [booking, ...prev.filter((item) => item.id !== booking.id)].slice(0, 6));
       }
       setCheckInCode('');
-      setMessage(`Đã tìm thấy booking ${booking?.booking_code || ''} (trạng thái: ${booking?.status || '-'})`);
+      setMessage({ text: `Đã tìm thấy booking ${booking?.booking_code || ''} (trạng thái: ${booking?.status || '-'})`, tone: 'success' });
     } catch (error) {
-      setMessage(error?.response?.data?.error?.message || 'Check-in thất bại.');
+      setMessage({ text: getApiErrorMessage(error, 'Check-in thất bại.'), tone: 'error' });
     }
   }
 
   async function createBookingForCustomer(e) {
     e.preventDefault();
     if (!bookingForm.startTimeSlotId || !bookingForm.customerPhone.trim() || !bookingForm.customerName.trim()) {
-      setMessage('Vui lòng nhập đầy đủ số điện thoại và tên khách.');
+      setMessage({ text: 'Vui lòng nhập đầy đủ số điện thoại và tên khách.', tone: 'error' });
       return;
     }
-
-    const depositEnabled = Boolean(bookingForm.collectDeposit);
-    const depositAmount = Math.round(Number(bookingForm.depositAmount || 0));
-    if (depositEnabled && (!Number.isFinite(depositAmount) || depositAmount <= 0)) {
-      setMessage('Nếu chọn cọc trước, vui lòng nhập số tiền cọc hợp lệ.');
-      return;
-    }
-
-    const composedNote = depositEnabled
-      ? buildDepositNote(bookingForm.notes, depositAmount, bookingForm.depositMethod, bookingForm.depositReference)
-      : bookingForm.notes.trim();
 
     const isSingleSlot = !bookingForm.endTimeSlotId || bookingForm.endTimeSlotId === 'single';
     const payload = {
       customer_phone: bookingForm.customerPhone.trim(),
       customer_name: bookingForm.customerName.trim(),
       customer_type: bookingForm.customerType,
-      notes: composedNote,
+      display_color: bookingForm.displayColor,
+      notes: bookingForm.notes.trim(),
       ...(isSingleSlot
         ? { time_slot_id: Number(bookingForm.startTimeSlotId) }
         : {
@@ -247,60 +172,88 @@ export default function StaffPage() {
       const res = await staffApi.createBookingForCustomer(payload);
       const responseData = res.data?.data;
       const bookings = responseData?.bookings || (responseData ? [responseData] : []);
-      const bookingCode = bookings[0]?.booking_code || 'booking';
+      const totalPrice = bookings.reduce((sum, booking) => sum + Number(booking.total_price || 0), 0);
+      const paymentTotal = resolvePaymentTotal(bookingForm, totalPrice);
+      const allocations = allocatePaymentAcrossSlots(bookings, paymentTotal);
 
-      let deposited = 0;
-      if (depositEnabled && bookings.length > 0) {
-        let remaining = depositAmount;
-        for (const booking of bookings) {
-          if (!booking?.id || remaining <= 0) continue;
-
-          const cap = Number(booking.remaining_due ?? booking.total_price ?? 0);
-          const amountToPay = Math.min(remaining, cap > 0 ? cap : remaining);
-          if (amountToPay <= 0) continue;
-
-          await bookingApi.confirmDeposit(booking.id, {
-            amount: amountToPay,
-            method: bookingForm.depositMethod,
-            reference: bookingForm.depositReference?.trim() || ''
-          });
-          deposited += amountToPay;
-          remaining -= amountToPay;
-        }
+      for (let index = 0; index < bookings.length; index += 1) {
+        if (!bookings[index]?.id) continue;
+        await staffApi.updateBooking(bookings[index].id, {
+          payment_total: allocations[index],
+          payment_method: bookingForm.paymentMethod,
+          payment_reference: bookingForm.paymentReference?.trim() || '',
+          display_color: bookingForm.displayColor
+        });
       }
 
-      const startLabel = selectedStartSlot ? formatTime(selectedStartSlot.start_time) : '';
-      const selectedEndSlot = endSlots.find((slot) => String(slot.id) === String(bookingForm.endTimeSlotId));
-      const endLabel = isSingleSlot
-        ? (selectedStartSlot ? formatTime(selectedStartSlot.end_time) : '')
-        : (selectedEndSlot ? formatTime(selectedEndSlot.start_time) : '');
-      const depositMsg = deposited > 0
-        ? ` Đã ghi nhận cọc ${formatMoney(deposited)} VND (${paymentMethodLabel(bookingForm.depositMethod)}).`
+      const bookingCode = bookings[0]?.booking_code || 'booking';
+      const paymentMsg = paymentTotal > 0
+        ? ` Đã thu ${formatMoney(paymentTotal)} VND (${paymentMethodLabel(bookingForm.paymentMethod)}).`
         : '';
-
-      setMessage(
-        bookings.length > 1
-          ? `Đã tạo ${bookings.length} slot booking (${startLabel} - ${endLabel}). Mã đầu tiên: ${bookingCode}.${depositMsg}`
-          : `Đã tạo booking ${bookingCode} (${startLabel} - ${endLabel}).${depositMsg}`
-      );
-      localStorage.setItem('last_booking_day', bookingForm.day);
+      setMessage({ text: `Đặt sân thành công. Mã booking: ${bookingCode}.${paymentMsg}`, tone: 'success' });
       setBookingDialogOpen(false);
-      setBookingForm((prev) => ({
-        ...prev,
-        startTimeSlotId: '',
-        endTimeSlotId: 'single',
-        customerPhone: '',
-        customerName: '',
-        customerType: 'walk_in',
-        notes: '',
-        collectDeposit: false,
-        depositAmount: '',
-        depositMethod: 'transfer',
-        depositReference: ''
-      }));
+      setBookingForm(createBookingForm({ day: viewDay }));
       await loadSlots(viewDay);
     } catch (error) {
-      setMessage(error?.response?.data?.error?.message || 'Không tạo được booking cho khách.');
+      setMessage({ text: getApiErrorMessage(error, 'Không tạo được booking cho khách.'), tone: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function updateSelectedBooking(e) {
+    e.preventDefault();
+    if (!selectedBooking?.slots?.length) {
+      setMessage({ text: 'Không tìm thấy dữ liệu booking để cập nhật. Vui lòng đóng cửa sổ và thử lại.', tone: 'error' });
+      return;
+    }
+
+    const targetSlotIds = (bookingForm.rescheduleSlotIds || []).map(Number).filter(Boolean);
+    if (targetSlotIds.length === 0) {
+      setMessage({ text: 'Vui lòng chọn đầy đủ sân và khung giờ mới.', tone: 'error' });
+      return;
+    }
+
+    const totalPrice = Number(bookingForm.schedulePreviewTotal || selectedBooking.total_price || 0);
+    const paymentTotal = resolvePaymentTotal(bookingForm, totalPrice);
+    const previousPaid = Number(selectedBooking.deposit_paid || 0);
+    if (paymentTotal < previousPaid && !bookingForm.paymentAdjustmentReason.trim()) {
+      setMessage({ text: 'Vui lòng nhập lý do khi giảm số tiền đã thu.', tone: 'error' });
+      return;
+    }
+
+    const anchorBookingId = selectedBooking.slots.find((slot) => slot.booking_id)?.booking_id;
+    if (!anchorBookingId) {
+      setMessage({ text: 'Không xác định được booking cần cập nhật.', tone: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await staffApi.updateBookingGroup(anchorBookingId, {
+        time_slot_ids: targetSlotIds,
+        customer_name: bookingForm.customerName.trim(),
+        customer_phone: bookingForm.customerPhone.trim(),
+        customer_type: bookingForm.customerType,
+        notes: bookingForm.notes.trim(),
+        payment_total: paymentTotal,
+        payment_method: bookingForm.paymentMethod,
+        payment_reference: bookingForm.paymentReference?.trim() || '',
+        payment_adjustment_reason: bookingForm.paymentAdjustmentReason?.trim() || '',
+        display_color: bookingForm.displayColor
+      });
+
+      const targetDay = bookingForm.day || viewDay;
+      setMessage({ text: `Đã cập nhật booking ${selectedBooking.booking_code}.`, tone: 'success' });
+      setBookingDialogOpen(false);
+      setSelectedBookingKey(null);
+      if (targetDay !== viewDay) {
+        setViewDay(targetDay);
+      } else {
+        await loadSlots(viewDay);
+      }
+    } catch (error) {
+      setMessage({ text: getApiErrorMessage(error, 'Không cập nhật được booking.'), tone: 'error' });
     } finally {
       setLoading(false);
     }
@@ -310,5 +263,18 @@ export default function StaffPage() {
     loadSlots(viewDay);
   }, [viewDay]);
 
-  return <StaffOperationsView vm={{ message, loading, checkInCode, setCheckInCode, lastCheckin, checkinFeed, selectedBookingKey, setSelectedBookingKey, depositEdit, setDepositEdit, bookingDialogOpen, setBookingDialogOpen, bookingForm, setBookingForm, viewDay, setViewDay, courtColumns, heatmapGrid, bookingGroups, selectedBooking, selectedBookingSlotIds, groupInfoBySlotId, selectedStartSlot, endSlots, handleDeskCellClick, confirmSelectedDeposit, doCheckin, createBookingForCustomer }} />;
+  const notifyError = (text) => setMessage({ text, tone: 'error' });
+
+  return (
+    <StaffOperationsView
+      vm={{
+        message, loading, checkInCode, setCheckInCode, lastCheckin, checkinFeed,
+        bookingDialogOpen, setBookingDialogOpen, bookingDialogMode,
+        bookingForm, setBookingForm, viewDay, setViewDay, courtColumns, heatmapGrid,
+        bookingGroups, selectedBooking, selectedBookingSlotIds, groupInfoBySlotId,
+        selectedStartSlot, endSlots, handleDeskCellClick, doCheckin,
+        createBookingForCustomer, updateSelectedBooking, loadBookingScheduleSlots, clearNotice, notifyError
+      }}
+    />
+  );
 }

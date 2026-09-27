@@ -60,6 +60,57 @@ func (r *BookingRepository) FindActiveByTimeSlotIDExcludeBooking(slotID, exclude
 	return &booking, nil
 }
 
+func (r *BookingRepository) ListActiveGroupForUpdate(groupID string, bookingID uint) ([]models.Booking, error) {
+	var bookings []models.Booking
+	query := r.db.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Preload("TimeSlot").
+		Preload("Court").
+		Preload("User").
+		Where("status IN ?", []models.BookingStatus{
+			models.BookingPending,
+			models.BookingConfirmed,
+			models.BookingCheckedIn,
+		})
+
+	if groupID != "" {
+		query = query.Where("booking_group_id = ?", groupID)
+	} else {
+		query = query.Where("id = ?", bookingID)
+	}
+
+	if err := query.Order("time_slot_id ASC, id ASC").Find(&bookings).Error; err != nil {
+		return nil, err
+	}
+	if len(bookings) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return bookings, nil
+}
+
+func (r *BookingRepository) FindActiveByTimeSlotIDExcludeBookingIDs(slotID uint, excludeBookingIDs []uint) (*models.Booking, error) {
+	var booking models.Booking
+	query := r.db.
+		Where("time_slot_id = ?", slotID).
+		Where("status IN ? OR (status = ? AND (expires_at IS NULL OR expires_at > ?))",
+			[]models.BookingStatus{models.BookingConfirmed, models.BookingCheckedIn, models.BookingCompleted},
+			models.BookingPending,
+			time.Now(),
+		)
+
+	if len(excludeBookingIDs) > 0 {
+		query = query.Where("id NOT IN ?", excludeBookingIDs)
+	}
+
+	err := query.First(&booking).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &booking, nil
+}
+
 func (r *BookingRepository) ExpirePending(now time.Time) (int64, error) {
 	reason := "booking hold expired"
 	result := r.db.Model(&models.Booking{}).
@@ -86,33 +137,35 @@ func (r *BookingRepository) ExpirePendingByTimeSlot(slotID uint, now time.Time) 
 func (r *BookingRepository) ListByDateWithDetails(day time.Time) ([]BookingAdminView, error) {
 	start, end := dayBounds(day)
 	type row struct {
-		ID            uint
-		BookingCode   string
-		UserID        uint
-		CustomerName  string
-		CustomerPhone string
-		CourtID       uint
-		CourtName     string
-		CourtType     string
-		TimeSlotID    uint
-		StartTime     time.Time
-		EndTime       time.Time
-		CustomerType  string
-		Notes         string
-		Status        string
-		TotalPrice    int64
-		DepositPaid   int64
-		RemainingDue  int64
-		ExpiresAt     *time.Time
-		CanceledAt    *time.Time
-		CancelReason  *string
-		CreatedAt     time.Time
-		UpdatedAt     time.Time
+		ID             uint
+		BookingCode    string
+		BookingGroupID string
+		DisplayColor   string
+		UserID         uint
+		CustomerName   string
+		CustomerPhone  string
+		CourtID        uint
+		CourtName      string
+		CourtType      string
+		TimeSlotID     uint
+		StartTime      time.Time
+		EndTime        time.Time
+		CustomerType   string
+		Notes          string
+		Status         string
+		TotalPrice     int64
+		DepositPaid    int64
+		RemainingDue   int64
+		ExpiresAt      *time.Time
+		CanceledAt     *time.Time
+		CancelReason   *string
+		CreatedAt      time.Time
+		UpdatedAt      time.Time
 	}
 
 	var rows []row
 	err := r.db.Raw(`
-		SELECT b.id, b.booking_code, b.user_id,
+		SELECT b.id, b.booking_code, b.booking_group_id, b.display_color, b.user_id,
 		       u.full_name AS customer_name, u.phone AS customer_phone,
 		       b.court_id, c.name AS court_name, c.court_type,
 		       b.time_slot_id, ts.start_time, ts.end_time,
@@ -133,28 +186,30 @@ func (r *BookingRepository) ListByDateWithDetails(day time.Time) ([]BookingAdmin
 	views := make([]BookingAdminView, 0, len(rows))
 	for _, row := range rows {
 		views = append(views, BookingAdminView{
-			ID:            row.ID,
-			BookingCode:   row.BookingCode,
-			UserID:        row.UserID,
-			CustomerName:  row.CustomerName,
-			CustomerPhone: row.CustomerPhone,
-			CourtID:       row.CourtID,
-			CourtName:     row.CourtName,
-			CourtType:     row.CourtType,
-			TimeSlotID:    row.TimeSlotID,
-			StartTime:     row.StartTime,
-			EndTime:       row.EndTime,
-			CustomerType:  row.CustomerType,
-			Notes:         row.Notes,
-			Status:        row.Status,
-			TotalPrice:    row.TotalPrice,
-			DepositPaid:   row.DepositPaid,
-			RemainingDue:  row.RemainingDue,
-			ExpiresAt:     row.ExpiresAt,
-			CanceledAt:    row.CanceledAt,
-			CancelReason:  row.CancelReason,
-			CreatedAt:     row.CreatedAt,
-			UpdatedAt:     row.UpdatedAt,
+			ID:             row.ID,
+			BookingCode:    row.BookingCode,
+			BookingGroupID: row.BookingGroupID,
+			DisplayColor:   row.DisplayColor,
+			UserID:         row.UserID,
+			CustomerName:   row.CustomerName,
+			CustomerPhone:  row.CustomerPhone,
+			CourtID:        row.CourtID,
+			CourtName:      row.CourtName,
+			CourtType:      row.CourtType,
+			TimeSlotID:     row.TimeSlotID,
+			StartTime:      row.StartTime,
+			EndTime:        row.EndTime,
+			CustomerType:   row.CustomerType,
+			Notes:          row.Notes,
+			Status:         row.Status,
+			TotalPrice:     row.TotalPrice,
+			DepositPaid:    row.DepositPaid,
+			RemainingDue:   row.RemainingDue,
+			ExpiresAt:      row.ExpiresAt,
+			CanceledAt:     row.CanceledAt,
+			CancelReason:   row.CancelReason,
+			CreatedAt:      row.CreatedAt,
+			UpdatedAt:      row.UpdatedAt,
 		})
 	}
 	return views, nil
@@ -257,4 +312,56 @@ func (r *BookingRepository) PeakHours(day time.Time) (map[int]int64, error) {
 		result[slot.StartTime.Hour()]++
 	}
 	return result, nil
+}
+
+type BookingRangeSummary struct {
+	BookedValue    int64 `json:"booked_value"`
+	OutstandingDue int64 `json:"outstanding_due"`
+	BookedSlots    int64 `json:"booked_slots"`
+	CanceledSlots  int64 `json:"canceled_slots"`
+	TotalSlots     int64 `json:"total_slots"`
+}
+
+type CourtRangeSummary struct {
+	CourtID        uint   `json:"court_id"`
+	CourtName      string `json:"court_name"`
+	BookedSlots    int64  `json:"booked_slots"`
+	BookedValue    int64  `json:"booked_value"`
+	OutstandingDue int64  `json:"outstanding_due"`
+}
+
+func (r *BookingRepository) RangeSummary(start, end time.Time) (BookingRangeSummary, error) {
+	var summary BookingRangeSummary
+	if err := r.db.Raw(`
+		SELECT
+			COALESCE(SUM(CASE WHEN b.status IN ('confirmed','checked_in','completed') THEN b.total_price ELSE 0 END), 0) AS booked_value,
+			COALESCE(SUM(CASE WHEN b.status IN ('confirmed','checked_in') THEN b.remaining_due ELSE 0 END), 0) AS outstanding_due,
+			COALESCE(SUM(CASE WHEN b.status IN ('confirmed','checked_in','completed') THEN 1 ELSE 0 END), 0) AS booked_slots,
+			COALESCE(SUM(CASE WHEN b.status IN ('canceled','no_show') AND (b.cancel_reason IS NULL OR b.cancel_reason <> 'booking hold expired') THEN 1 ELSE 0 END), 0) AS canceled_slots
+		FROM bookings b
+		JOIN time_slots ts ON ts.id = b.time_slot_id
+		WHERE ts.start_time >= ? AND ts.start_time < ?`, start, end).Scan(&summary).Error; err != nil {
+		return summary, err
+	}
+	if err := r.db.Model(&models.TimeSlot{}).
+		Where("start_time >= ? AND start_time < ?", start, end).
+		Count(&summary.TotalSlots).Error; err != nil {
+		return summary, err
+	}
+	return summary, nil
+}
+
+func (r *BookingRepository) CourtRangeSummaries(start, end time.Time) ([]CourtRangeSummary, error) {
+	var rows []CourtRangeSummary
+	err := r.db.Raw(`
+		SELECT c.id AS court_id, c.name AS court_name,
+		       COALESCE(SUM(CASE WHEN b.status IN ('confirmed','checked_in','completed') THEN 1 ELSE 0 END), 0) AS booked_slots,
+		       COALESCE(SUM(CASE WHEN b.status IN ('confirmed','checked_in','completed') THEN b.total_price ELSE 0 END), 0) AS booked_value,
+		       COALESCE(SUM(CASE WHEN b.status IN ('confirmed','checked_in') THEN b.remaining_due ELSE 0 END), 0) AS outstanding_due
+		FROM courts c
+		LEFT JOIN time_slots ts ON ts.court_id = c.id AND ts.start_time >= ? AND ts.start_time < ?
+		LEFT JOIN bookings b ON b.time_slot_id = ts.id
+		GROUP BY c.id, c.name
+		ORDER BY c.id`, start, end).Scan(&rows).Error
+	return rows, err
 }

@@ -9,9 +9,59 @@ import (
 
 	"badminton-platform/backend/internal/models"
 	"badminton-platform/backend/internal/repository"
+	"badminton-platform/backend/internal/timeutil"
 
 	"gorm.io/gorm"
 )
+
+func (s *BookingService) ConfirmManagedBookings(ctx context.Context, actorID uint, actorRole models.Role, bookingIDs []uint) ([]*models.Booking, error) {
+	if len(bookingIDs) == 0 {
+		return nil, errors.New("booking ids are required")
+	}
+
+	confirmed := make([]*models.Booking, 0, len(bookingIDs))
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		bookings := s.bookings.WithTx(tx)
+		for _, bookingID := range bookingIDs {
+			locked, err := bookings.FindByIDForUpdate(bookingID)
+			if err != nil {
+				return err
+			}
+			if err := authorizeBookingActor(locked, actorID, actorRole); err != nil {
+				return err
+			}
+			if locked.Status == models.BookingCanceled || locked.Status == models.BookingCompleted || locked.Status == models.BookingNoShow {
+				return errors.New("booking cannot be confirmed in current status")
+			}
+			if locked.Status == models.BookingPending {
+				locked.Status = models.BookingConfirmed
+				locked.ExpiresAt = nil
+				if err := bookings.Update(locked); err != nil {
+					return err
+				}
+			}
+			confirmed = append(confirmed, locked)
+		}
+
+		payload := fmt.Sprintf(`{"booking_ids":%q,"actor_role":%q}`, fmt.Sprint(bookingIDs), actorRole)
+		return tx.Create(&models.AuditLog{
+			ActorID:    actorID,
+			Action:     "booking_confirmed_at_counter",
+			TargetType: "booking_group",
+			TargetID:   fmt.Sprint(bookingIDs),
+			Payload:    payload,
+		}).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, booking := range confirmed {
+		s.releaseLock(ctx, fmt.Sprintf("lock:slot:%d", booking.TimeSlotID))
+		s.releaseLock(ctx, fmt.Sprintf("mem:%d", booking.TimeSlotID))
+	}
+	return confirmed, nil
+}
 
 func (s *BookingService) ConfirmDeposit(ctx context.Context, actorID uint, actorRole models.Role, bookingID uint, amount int64, method, reference string) (*models.Booking, error) {
 	if amount <= 0 {
@@ -44,12 +94,16 @@ func (s *BookingService) ConfirmDeposit(ctx context.Context, actorID uint, actor
 		}
 
 		if err := payments.Create(&models.Payment{
-			BookingID:  locked.ID,
-			Amount:     amount,
-			PaymentFor: "deposit",
-			Method:     method,
-			Status:     "success",
-			Reference:  strings.TrimSpace(reference),
+			BookingID:    locked.ID,
+			Amount:       amount,
+			PaymentFor:   "deposit",
+			Method:       method,
+			Status:       "success",
+			Reference:    strings.TrimSpace(reference),
+			ActorID:      actorID,
+			ActorRole:    string(actorRole),
+			Shift:        GetCurrentShift(),
+			BusinessDate: timeutil.StartOfDay(timeutil.Now()),
 		}); err != nil {
 			return err
 		}
@@ -113,12 +167,16 @@ func (s *BookingService) CancelBooking(ctx context.Context, actorID uint, actorR
 		}
 		if refund > 0 {
 			if err := payments.Create(&models.Payment{
-				BookingID:  locked.ID,
-				Amount:     -refund,
-				PaymentFor: "refund",
-				Method:     "refund",
-				Status:     "success",
-				Reference:  "booking-cancel",
+				BookingID:    locked.ID,
+				Amount:       -refund,
+				PaymentFor:   "refund",
+				Method:       "refund",
+				Status:       "success",
+				Reference:    "booking-cancel",
+				ActorID:      actorID,
+				ActorRole:    string(actorRole),
+				Shift:        GetCurrentShift(),
+				BusinessDate: timeutil.StartOfDay(timeutil.Now()),
 			}); err != nil {
 				return err
 			}

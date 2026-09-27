@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"badminton-platform/backend/internal/models"
-	"badminton-platform/backend/internal/pricing"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type SlotRepository struct{ db *gorm.DB }
@@ -49,6 +49,21 @@ func (r *SlotRepository) ListAvailableByDate(day time.Time) ([]models.TimeSlot, 
 	return slots, err
 }
 
+func (r *SlotRepository) FindByIDsForUpdate(ids []uint) ([]models.TimeSlot, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	var slots []models.TimeSlot
+	if err := r.db.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Preload("Court").
+		Where("id IN ?", ids).
+		Order("start_time ASC").
+		Find(&slots).Error; err != nil {
+		return nil, err
+	}
+	return slots, nil
+}
+
 func (r *SlotRepository) FindByID(id uint) (*models.TimeSlot, error) {
 	var slot models.TimeSlot
 	if err := r.db.Preload("Court").First(&slot, id).Error; err != nil {
@@ -61,29 +76,31 @@ func (r *SlotRepository) ListByDateWithStatus(day time.Time) ([]SlotDayView, err
 	start, end := dayBounds(day)
 	now := time.Now()
 	type row struct {
-		ID            uint
-		CourtID       uint
-		CourtName     string
-		CourtType     string
-		StartTime     time.Time
-		EndTime       time.Time
-		Price         int64
-		BookingID     *uint
-		BookingCode   *string
-		BookingStat   *string
-		CustomerName  *string
-		CustomerPhone *string
-		CustomerType  *string
-		BookingNote   *string
-		DepositPaid   *int64
-		RemainingDue  *int64
+		ID             uint
+		BookingGroupID *string
+		DisplayColor   *string
+		CourtID        uint
+		CourtName      string
+		CourtType      string
+		StartTime      time.Time
+		EndTime        time.Time
+		Price          int64
+		BookingID      *uint
+		BookingCode    *string
+		BookingStat    *string
+		CustomerName   *string
+		CustomerPhone  *string
+		CustomerType   *string
+		BookingNote    *string
+		DepositPaid    *int64
+		RemainingDue   *int64
 	}
 
 	var rows []row
 	err := r.db.Raw(`
 		SELECT ts.id, ts.court_id, c.name AS court_name, c.court_type,
 		       ts.start_time, ts.end_time, ts.price,
-		       b.id AS booking_id, b.booking_code, b.status AS booking_stat,
+		       b.id AS booking_id, b.booking_code, b.booking_group_id, b.display_color, b.status AS booking_stat,
 		       u.full_name AS customer_name, u.phone AS customer_phone,
 		       b.customer_type, b.notes AS booking_note, b.deposit_paid, b.remaining_due
 		FROM time_slots ts
@@ -114,6 +131,8 @@ func (r *SlotRepository) ListByDateWithStatus(day time.Time) ([]SlotDayView, err
 			view.Booked = true
 			view.BookingID = row.BookingID
 			view.BookingCode = row.BookingCode
+			view.BookingGroupID = row.BookingGroupID
+			view.DisplayColor = row.DisplayColor
 			view.CustomerName = row.CustomerName
 			view.CustomerPhone = row.CustomerPhone
 			view.CustomerType = row.CustomerType
@@ -158,35 +177,10 @@ func (r *SlotRepository) DeleteFutureUnbookedByCourt(courtID uint, from time.Tim
 		Delete(&models.TimeSlot{}).Error
 }
 
-func (r *SlotRepository) RepriceUnbookedByCourtFromDay(courtID uint, from time.Time, basePrice int64, peakStart, peakEnd int, peakMultiplier float64) error {
-	start := from
-	if start.IsZero() {
-		start = time.Now()
+func (r *SlotRepository) ListFutureUnbookedByCourt(courtID uint, from time.Time) ([]models.TimeSlot, error) {
+	if from.IsZero() {
+		from = time.Now()
 	}
-	start = start.Truncate(time.Minute)
-
-	query := r.db.Where("court_id = ? AND start_time >= ?", courtID, start)
-	return r.repriceUnbookedSlots(query, basePrice, peakStart, peakEnd, peakMultiplier)
-}
-
-// RepriceUnbookedByCourtForDate synchronizes only free slots for the requested
-// current/future date with the court's current price policy. Past times from the
-// same day and every slot protected by an active booking remain unchanged.
-func (r *SlotRepository) RepriceUnbookedByCourtForDate(courtID uint, day time.Time, basePrice int64, peakStart, peakEnd int, peakMultiplier float64) error {
-	start, end := dayBounds(day)
-	now := time.Now()
-	if !end.After(now) {
-		return nil
-	}
-	if now.After(start) {
-		start = now.Truncate(time.Minute)
-	}
-
-	query := r.db.Where("court_id = ? AND start_time >= ? AND start_time < ?", courtID, start, end)
-	return r.repriceUnbookedSlots(query, basePrice, peakStart, peakEnd, peakMultiplier)
-}
-
-func (r *SlotRepository) repriceUnbookedSlots(query *gorm.DB, basePrice int64, peakStart, peakEnd int, peakMultiplier float64) error {
 	blocking := r.db.Model(&models.Booking{}).
 		Select("time_slot_id").
 		Where("status IN ? OR (status = ? AND (expires_at IS NULL OR expires_at > ?))",
@@ -196,22 +190,11 @@ func (r *SlotRepository) repriceUnbookedSlots(query *gorm.DB, basePrice int64, p
 		)
 
 	var slots []models.TimeSlot
-	if err := query.Where("id NOT IN (?)", blocking).Find(&slots).Error; err != nil {
-		return err
-	}
-
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		for _, slot := range slots {
-			price := pricing.CourtSlotPrice(basePrice, slot.StartTime, peakStart, peakEnd, peakMultiplier)
-			if slot.Price == price {
-				continue
-			}
-			if err := tx.Model(&models.TimeSlot{}).Where("id = ?", slot.ID).Update("price", price).Error; err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	err := r.db.Where("court_id = ? AND start_time >= ?", courtID, from).
+		Where("id NOT IN (?)", blocking).
+		Order("start_time asc").
+		Find(&slots).Error
+	return slots, err
 }
 
 func dayBounds(day time.Time) (time.Time, time.Time) {

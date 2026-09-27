@@ -1,7 +1,6 @@
-import BookingCreateModal from '../../components/booking/BookingCreateModal';
+import BookingModal from '../../components/booking/BookingModal';
 import AppToast from '../../components/feedback/AppToast';
 import StaffCheckinPanel from './components/StaffCheckinPanel';
-import StaffDepositEditor from './components/StaffDepositEditor';
 import StaffScheduleBoard from './components/StaffScheduleBoard';
 
 export default function StaffOperationsView({ vm }) {
@@ -14,7 +13,7 @@ export default function StaffOperationsView({ vm }) {
         </div>
       </div>
 
-      <AppToast message={vm.message} />
+      <AppToast message={vm.message} onDismiss={vm.clearNotice} />
 
       <StaffScheduleBoard
         viewDay={vm.viewDay}
@@ -27,7 +26,7 @@ export default function StaffOperationsView({ vm }) {
         onCellClick={vm.handleDeskCellClick}
       />
 
-      <div className="staff-action-grid">
+      <div className="staff-action-grid staff-action-grid--single">
         <StaffCheckinPanel
           checkInCode={vm.checkInCode}
           setCheckInCode={vm.setCheckInCode}
@@ -35,28 +34,23 @@ export default function StaffOperationsView({ vm }) {
           checkinFeed={vm.checkinFeed}
           onSubmit={vm.doCheckin}
         />
-        <StaffDepositEditor
-          bookingGroups={vm.bookingGroups}
-          selectedBooking={vm.selectedBooking}
-          setSelectedBookingKey={vm.setSelectedBookingKey}
-          depositEdit={vm.depositEdit}
-          setDepositEdit={vm.setDepositEdit}
-          loading={vm.loading}
-          onConfirm={vm.confirmSelectedDeposit}
-        />
       </div>
 
-      <BookingCreateModal
+      <BookingModal
         open={vm.bookingDialogOpen}
-        title="Đặt sân cho khách"
+        mode={vm.bookingDialogMode}
         selectedSlot={vm.selectedStartSlot}
+        bookingGroup={vm.selectedBooking}
         day={vm.viewDay}
         endSlots={vm.endSlots}
         form={vm.bookingForm}
         setForm={vm.setBookingForm}
         loading={vm.loading}
-        onSubmit={vm.createBookingForCustomer}
-        onClose={() => vm.setBookingDialogOpen(false)}
+        onSubmit={vm.bookingDialogMode === 'edit' ? vm.updateSelectedBooking : vm.createBookingForCustomer}
+        loadDaySlots={vm.loadBookingScheduleSlots}
+        feedback={vm.message?.tone === 'error' || vm.message?.tone === 'warning' ? vm.message : null}
+        onValidationError={vm.notifyError}
+        onClose={() => { vm.clearNotice?.(); vm.setBookingDialogOpen(false); }}
       />
     </section>
   );

@@ -11,6 +11,7 @@ export function compareCourtThenTime(a, b) {
 
 export function makeBookingGroupKey(slot) {
   if (!slot?.start_time) return '';
+  if (slot.booking_group_id) return `group:${slot.booking_group_id}`;
   return `${slot.court_id}|${slot.customer_phone || slot.customer_name || ''}`;
 }
 
@@ -28,7 +29,9 @@ export function groupBookedSlots(bookedSlots = []) {
     const identity = makeBookingGroupKey(slot);
     const current = groups.at(-1);
     const gap = current ? new Date(slot.start_time).getTime() - new Date(current.end_time).getTime() : Number.POSITIVE_INFINITY;
-    if (current && current.identity === identity && gap >= 0 && gap <= 3600000) {
+    const sameExplicitGroup = Boolean(slot.booking_group_id && current?.booking_group_id === slot.booking_group_id);
+    const legacyAdjacentGroup = !slot.booking_group_id && current && current.identity === identity && gap >= 0 && gap <= 3600000;
+    if (current && (sameExplicitGroup || legacyAdjacentGroup)) {
       current.slots.push(slot);
       current.booking_ids.push(slot.booking_id);
       current.time_slot_ids.push(slot.id);
@@ -39,17 +42,20 @@ export function groupBookedSlots(bookedSlots = []) {
       current.end_time = slot.end_time;
       current.booking_code ||= slot.booking_code;
       current.booking_note ||= slot.booking_note;
+      current.display_color ||= slot.display_color;
       continue;
     }
     groups.push({
       identity,
-      groupKey: `${identity}|${slot.start_time}`,
+      booking_group_id: slot.booking_group_id || '',
+      groupKey: slot.booking_group_id ? `group:${slot.booking_group_id}` : `${identity}|${slot.start_time}`,
       court_id: slot.court_id,
       court_name: slot.court_name,
       court_names: [slot.court_name || `Sân ${slot.court_id}`],
       customer_name: slot.customer_name,
       customer_phone: slot.customer_phone,
       customer_type: slot.customer_type,
+      display_color: slot.display_color || '#6f9f94',
       booking_code: slot.booking_code,
       booking_note: slot.booking_note,
       start_time: slot.start_time,

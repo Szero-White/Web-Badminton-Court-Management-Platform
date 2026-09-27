@@ -8,6 +8,7 @@ export const adminApi = {
   listBookings: (day) => api.get('/admin/bookings', { params: { day } }),
   createBooking: (payload) => api.post('/admin/bookings', payload),
   updateBooking: (bookingId, payload) => api.put(`/admin/bookings/${bookingId}`, payload),
+  updateBookingGroup: (bookingId, payload) => api.put(`/admin/bookings/${bookingId}/group`, payload),
   deleteBooking: (bookingId, reason = '') => api.delete(`/admin/bookings/${bookingId}`, { data: reason ? { reason } : {} }),
   createBeverage: (payload) => api.post('/admin/beverages', payload),
   listBeverages: () => api.get('/admin/beverages'),
@@ -17,5 +18,9 @@ export const adminApi = {
   beverageHistory: (beverageId, limit = 30) => api.get(`/admin/beverages/${beverageId}/history`, { params: { limit } }),
   createCourt: (payload) => api.post('/admin/courts', payload),
   updateCourt: (courtId, payload) => api.put(`/admin/courts/${courtId}`, payload),
-  listCourts: () => api.get('/admin/courts')
+  listCourts: () => api.get('/admin/courts'),
+  listCourtPriceRules: (courtId) => api.get(`/admin/courts/${courtId}/price-rules`),
+  createCourtPriceRule: (courtId, payload) => api.post(`/admin/courts/${courtId}/price-rules`, payload),
+  updateCourtPriceRule: (ruleId, payload) => api.put(`/admin/price-rules/${ruleId}`, payload),
+  deleteCourtPriceRule: (ruleId) => api.delete(`/admin/price-rules/${ruleId}`)
 };
