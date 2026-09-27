@@ -5,6 +5,7 @@ export const staffApi = {
   createBookingForCustomer: (payload) => api.post('/staff/bookings/create', payload),
   updateBooking: (bookingId, payload) => api.put(`/staff/bookings/${bookingId}`, payload),
   updateBookingGroup: (bookingId, payload) => api.put(`/staff/bookings/${bookingId}/group`, payload),
+  cancelBooking: (bookingId, reason) => api.post(`/bookings/${bookingId}/cancel`, { reason }),
   listBeverageStock: () => api.get('/staff/beverages'),
   sellBeverage: (payload) => api.post('/staff/beverages/sell', payload),
   restockBeverage: (payload) => api.post('/staff/beverages/restock', payload),

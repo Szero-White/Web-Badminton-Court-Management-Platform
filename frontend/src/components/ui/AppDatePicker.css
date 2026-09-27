@@ -51,7 +51,7 @@
 
 .app-calendar-popover {
   position: fixed;
-  z-index: 260;
+  z-index: 6200;
   width: min(328px, calc(100vw - 24px));
   padding: 14px;
   border: 1px solid rgba(34, 55, 53, 0.1);

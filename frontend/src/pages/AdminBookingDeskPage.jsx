@@ -65,7 +65,6 @@ export default function AdminBookingDeskPage() {
 
   async function loadData() {
     setLoading(true);
-    setMessage('');
     try {
       const res = await adminApi.getDaySlots(day);
       const data = res.data?.data || [];
@@ -217,8 +216,8 @@ export default function AdminBookingDeskPage() {
         display_color: bookingForm.displayColor
       });
 
+      const bookingCode = selectedBooking.booking_code;
       const targetDay = bookingForm.day || day;
-      setMessage({ text: `Đã cập nhật booking ${selectedBooking.booking_code}.`, tone: 'success' });
       setBookingDialogOpen(false);
       setSelectedBookingKey(null);
       setSelectedSlot(null);
@@ -227,6 +226,7 @@ export default function AdminBookingDeskPage() {
       } else {
         await loadData();
       }
+      setMessage({ text: `Đã cập nhật booking ${bookingCode}.`, tone: 'success' });
     } catch (error) {
       setMessage({ text: getApiErrorMessage(error, 'Không thể cập nhật booking.'), tone: 'error' });
     } finally {
@@ -234,22 +234,25 @@ export default function AdminBookingDeskPage() {
     }
   }
 
-  async function handleDeleteBooking() {
-    if (!selectedBooking?.slots?.length) return;
-    const reason = window.prompt(`Nhập lý do hủy booking ${selectedBooking.booking_code}:`);
-    if (reason === null || !window.confirm(`Hủy booking ${selectedBooking.booking_code} gồm ${selectedBooking.slots.length} khung giờ?`)) return;
+  async function handleDeleteBooking(reason) {
+    if (!selectedBooking?.slots?.length || !reason?.trim()) {
+      setMessage({ text: 'Vui lòng nhập lý do hủy booking.', tone: 'error' });
+      return;
+    }
 
     setLoading(true);
     try {
       for (const slot of selectedBooking.slots) {
-        if (slot.booking_id) await adminApi.deleteBooking(slot.booking_id, reason || 'Quản trị viên hủy booking');
+        if (slot.booking_id) await adminApi.deleteBooking(slot.booking_id, reason.trim());
       }
+      const bookingCode = selectedBooking.booking_code || 'booking';
       setSelectedBookingKey(null);
       setBookingDialogOpen(false);
-      setMessage({ text: 'Đã hủy booking và cập nhật lịch.', tone: 'success' });
       await loadData();
+      setMessage({ text: `Đã hủy booking ${bookingCode} và cập nhật lịch.`, tone: 'success' });
     } catch (error) {
       setMessage({ text: getApiErrorMessage(error, 'Không thể hủy booking.'), tone: 'error' });
+      throw error;
     } finally {
       setLoading(false);
     }

@@ -1215,3 +1215,239 @@ body {
   background: rgba(29, 116, 113, 0.065);
   color: #285f5b;
 }
+
+/* V12J.2 - shared booking cancellation dialog */
+.app-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 7000 !important;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(24, 37, 36, .44);
+  backdrop-filter: blur(5px);
+}
+
+.app-confirm-dialog {
+  width: min(560px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 24px;
+  border: 1px solid rgba(44, 63, 61, .12);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 28px 80px rgba(22, 35, 34, .24);
+}
+
+.app-confirm-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 14px;
+  border-radius: 13px;
+  background: #fff0ec;
+  color: #b34f3f;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.app-confirm-heading > span {
+  color: #9a5a50;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.app-confirm-heading h3 {
+  margin: 5px 0 7px;
+  color: var(--text-strong);
+  font-size: 22px;
+  line-height: 1.22;
+  letter-spacing: -.025em;
+}
+
+.app-confirm-heading p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.app-confirm-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  margin-top: 18px;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: var(--border-soft);
+}
+
+.app-confirm-details > div {
+  min-width: 0;
+  padding: 12px 14px;
+  background: #fafcfb;
+}
+
+.app-confirm-details span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.app-confirm-details strong {
+  display: block;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-confirm-reason {
+  display: block;
+  margin-top: 18px;
+}
+
+.app-confirm-reason > span {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.app-confirm-reason textarea {
+  width: 100%;
+  min-height: 92px;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  border: 1px solid rgba(42, 65, 63, .16);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.app-confirm-reason textarea:focus {
+  outline: none;
+  border-color: rgba(179, 79, 63, .45);
+  box-shadow: 0 0 0 3px rgba(179, 79, 63, .08);
+}
+
+.app-confirm-reason small {
+  display: block;
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  text-align: right;
+}
+
+.app-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.app-confirm-primary {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  background: #b95746;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app-confirm-primary:hover:not(:disabled) {
+  background: #a6493a;
+}
+
+.app-confirm-primary:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.booking-modal-actions {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 620px) {
+  .app-confirm-dialog {
+    padding: 20px;
+    border-radius: 17px;
+  }
+
+  .app-confirm-details {
+    grid-template-columns: 1fr;
+  }
+
+  .app-confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .app-confirm-actions button {
+    width: 100%;
+  }
+}
+
+/* V12K - modal interaction layer contract */
+.booking-modal-backdrop {
+  pointer-events: auto !important;
+}
+
+.booking-modal {
+  position: relative !important;
+  z-index: 1 !important;
+  pointer-events: auto !important;
+}
+
+.booking-modal button,
+.booking-modal input,
+.booking-modal textarea,
+.booking-modal .app-select,
+.booking-modal .app-date-picker {
+  pointer-events: auto;
+}
+
+.booking-modal-actions {
+  position: relative;
+  z-index: 3;
+}
+
+.app-select {
+  position: relative;
+  z-index: 4;
+}
+
+.app-select.is-open {
+  z-index: 40;
+}
+
+.app-select-menu {
+  z-index: 50 !important;
+}
+
+.app-confirm-backdrop,
+.app-confirm-dialog,
+.app-confirm-dialog button,
+.app-confirm-dialog textarea {
+  pointer-events: auto !important;
+}

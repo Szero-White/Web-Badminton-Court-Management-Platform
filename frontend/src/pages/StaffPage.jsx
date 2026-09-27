@@ -243,8 +243,8 @@ export default function StaffPage() {
         display_color: bookingForm.displayColor
       });
 
+      const bookingCode = selectedBooking.booking_code;
       const targetDay = bookingForm.day || viewDay;
-      setMessage({ text: `Đã cập nhật booking ${selectedBooking.booking_code}.`, tone: 'success' });
       setBookingDialogOpen(false);
       setSelectedBookingKey(null);
       if (targetDay !== viewDay) {
@@ -252,8 +252,33 @@ export default function StaffPage() {
       } else {
         await loadSlots(viewDay);
       }
+      setMessage({ text: `Đã cập nhật booking ${bookingCode}.`, tone: 'success' });
     } catch (error) {
       setMessage({ text: getApiErrorMessage(error, 'Không cập nhật được booking.'), tone: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function cancelSelectedBooking(reason) {
+    if (!selectedBooking?.slots?.length || !reason?.trim()) {
+      setMessage({ text: 'Vui lòng nhập lý do hủy booking.', tone: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      for (const slot of selectedBooking.slots) {
+        if (slot.booking_id) await staffApi.cancelBooking(slot.booking_id, reason.trim());
+      }
+      const bookingCode = selectedBooking.booking_code || 'booking';
+      setSelectedBookingKey(null);
+      setBookingDialogOpen(false);
+      await loadSlots(viewDay);
+      setMessage({ text: `Đã hủy booking ${bookingCode} và giải phóng lịch sân.`, tone: 'success' });
+    } catch (error) {
+      setMessage({ text: getApiErrorMessage(error, 'Không thể hủy booking.'), tone: 'error' });
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -273,7 +298,7 @@ export default function StaffPage() {
         bookingForm, setBookingForm, viewDay, setViewDay, courtColumns, heatmapGrid,
         bookingGroups, selectedBooking, selectedBookingSlotIds, groupInfoBySlotId,
         selectedStartSlot, endSlots, handleDeskCellClick, doCheckin,
-        createBookingForCustomer, updateSelectedBooking, loadBookingScheduleSlots, clearNotice, notifyError
+        createBookingForCustomer, updateSelectedBooking, cancelSelectedBooking, loadBookingScheduleSlots, clearNotice, notifyError
       }}
     />
   );

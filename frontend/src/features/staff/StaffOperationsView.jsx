@@ -47,6 +47,7 @@ export default function StaffOperationsView({ vm }) {
         setForm={vm.setBookingForm}
         loading={vm.loading}
         onSubmit={vm.bookingDialogMode === 'edit' ? vm.updateSelectedBooking : vm.createBookingForCustomer}
+        onDelete={vm.bookingDialogMode === 'edit' ? vm.cancelSelectedBooking : undefined}
         loadDaySlots={vm.loadBookingScheduleSlots}
         feedback={vm.message?.tone === 'error' || vm.message?.tone === 'warning' ? vm.message : null}
         onValidationError={vm.notifyError}

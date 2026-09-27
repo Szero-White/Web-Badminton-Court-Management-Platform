@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import AppSelect from '../ui/AppSelect';
 import BookingColorPicker from './BookingColorPicker';
 import BookingScheduleEditor from './BookingScheduleEditor';
+import AppConfirmDialog from '../feedback/AppConfirmDialog';
 import { formatMoney } from '../../utils/formatters';
 import { formatTime } from '../../utils/dateTime';
 import { PAYMENT_STATUS_OPTIONS, resolvePaymentTotal } from '../../utils/bookingForm';
@@ -55,6 +56,7 @@ export default function BookingModal({
 }) {
   const firstInputRef = useRef(null);
   const onCloseRef = useRef(onClose);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -116,6 +118,17 @@ export default function BookingModal({
 
   if (!open || !selectedSlot) return null;
 
+  const closeModal = () => {
+    if (loading) return;
+    setCancelDialogOpen(false);
+    onClose?.();
+  };
+
+  const openCancelDialog = () => {
+    if (loading || mode !== 'edit' || typeof onDelete !== 'function') return;
+    setCancelDialogOpen(true);
+  };
+
   const update = (field, value) => {
     setForm((current) => {
       const next = { ...current, [field]: value };
@@ -151,7 +164,7 @@ export default function BookingModal({
             <h3 id="booking-modal-title">{title}</h3>
             <p>{helper}</p>
           </div>
-          <button type="button" className="booking-modal-close" aria-label="Đóng" onClick={onClose} disabled={loading}>
+          <button type="button" className="booking-modal-close" aria-label="Đóng" onClick={closeModal} disabled={loading}>
             ×
           </button>
         </header>
@@ -360,12 +373,17 @@ export default function BookingModal({
 
             <footer className="booking-modal-wide booking-modal-actions">
               {mode === 'edit' && onDelete ? (
-                <button type="button" className="booking-modal-danger" onClick={onDelete} disabled={loading}>
+                <button
+                  type="button"
+                  className="booking-modal-danger"
+                  onClick={openCancelDialog}
+                  disabled={loading}
+                >
                   Hủy booking
                 </button>
               ) : null}
               <span className="booking-modal-actions-spacer" />
-              <button type="button" className="operation-secondary-action" onClick={onClose} disabled={loading}>
+              <button type="button" className="operation-secondary-action" onClick={closeModal} disabled={loading}>
                 Đóng
               </button>
               <button type="submit" className="operation-primary-action" disabled={loading}>
@@ -378,5 +396,39 @@ export default function BookingModal({
     </div>
   );
 
-  return createPortal(modal, document.body);
+  return (
+    <>
+      {createPortal(modal, document.body)}
+      <AppConfirmDialog
+        open={cancelDialogOpen}
+        eyebrow="Hủy booking"
+        title={`Xác nhận hủy ${bookingGroup?.booking_code || 'booking'}`}
+        description="Booking sẽ được chuyển sang trạng thái đã hủy và lịch sân sẽ được giải phóng."
+        details={[
+          { label: 'Khách hàng', value: bookingGroup?.customer_name || 'Khách' },
+          { label: 'Số khung giờ', value: `${bookingGroup?.slots?.length || 1} khung` },
+          { label: 'Tổng tiền', value: `${formatMoney(Number(bookingGroup?.total_price || totalPrice || 0))} VND` },
+          { label: 'Đã thu', value: `${formatMoney(Number(bookingGroup?.deposit_paid || 0))} VND` }
+        ]}
+        reasonLabel="Lý do hủy"
+        reasonPlaceholder="Ví dụ: Khách đổi lịch, nhân viên đặt nhầm sân..."
+        reasonRequired
+        confirmLabel="Xác nhận hủy booking"
+        loading={loading}
+        onClose={() => {
+          if (!loading) setCancelDialogOpen(false);
+        }}
+        onConfirm={async (reason) => {
+          if (typeof onDelete !== 'function') return;
+          try {
+            await onDelete(reason);
+            setCancelDialogOpen(false);
+          } catch {
+            // Parent already exposes the API error through the shared notice system.
+            // Keep the dialog open so the operator can review/retry safely.
+          }
+        }}
+      />
+    </>
+  );
 }
