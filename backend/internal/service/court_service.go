@@ -14,12 +14,13 @@ import (
 const courtClockLayout = "15:04"
 
 type CourtService struct {
-	courts *repository.CourtRepository
-	slots  *repository.SlotRepository
+	courts     *repository.CourtRepository
+	slots      *repository.SlotRepository
+	priceRules *repository.PriceRuleRepository
 }
 
-func NewCourtService(courts *repository.CourtRepository, slots *repository.SlotRepository) *CourtService {
-	return &CourtService{courts: courts, slots: slots}
+func NewCourtService(courts *repository.CourtRepository, slots *repository.SlotRepository, priceRules *repository.PriceRuleRepository) *CourtService {
+	return &CourtService{courts: courts, slots: slots, priceRules: priceRules}
 }
 
 func (s *CourtService) CreateCourt(name, courtType, openTime, closeTime string, basePrice int64) (*models.Court, error) {
@@ -80,7 +81,6 @@ func (s *CourtService) UpdateCourt(id uint, name, courtType, openTime, closeTime
 	if isMaintenance != nil {
 		court.IsMaintenance = *isMaintenance
 	}
-
 	if err := s.courts.Update(court); err != nil {
 		return nil, err
 	}
@@ -92,16 +92,159 @@ func (s *CourtService) UpdateCourt(id uint, name, courtType, openTime, closeTime
 		}
 	}
 	if priceChanged {
-		if err := s.slots.RepriceUnbookedByCourtFromDay(court.ID, from, court.BasePrice, pricing.DefaultPeakStartHour, pricing.DefaultPeakEndHour, pricing.DefaultPeakMultiplier); err != nil {
+		if err := s.repriceFutureUnbooked(court.ID, from); err != nil {
 			return nil, err
 		}
 	}
 	return court, nil
 }
 
+func (s *CourtService) ListPriceRules(courtID uint) ([]models.CourtPriceRule, error) {
+	if _, err := s.courts.FindByID(courtID); err != nil {
+		return nil, err
+	}
+	return s.priceRules.ListByCourt(courtID)
+}
+
+func (s *CourtService) CreatePriceRule(rule *models.CourtPriceRule) (*models.CourtPriceRule, error) {
+	if _, err := s.courts.FindByID(rule.CourtID); err != nil {
+		return nil, err
+	}
+	if err := s.validatePriceRule(rule, 0); err != nil {
+		return nil, err
+	}
+	if err := s.priceRules.Create(rule); err != nil {
+		return nil, err
+	}
+	if err := s.repriceFutureUnbooked(rule.CourtID, timeutil.Now()); err != nil {
+		return nil, err
+	}
+	return rule, nil
+}
+
+func (s *CourtService) UpdatePriceRule(ruleID uint, incoming *models.CourtPriceRule) (*models.CourtPriceRule, error) {
+	current, err := s.priceRules.FindByID(ruleID)
+	if err != nil {
+		return nil, err
+	}
+	incoming.ID = current.ID
+	incoming.CourtID = current.CourtID
+	incoming.CreatedAt = current.CreatedAt
+	if err := s.validatePriceRule(incoming, ruleID); err != nil {
+		return nil, err
+	}
+	if err := s.priceRules.Update(incoming); err != nil {
+		return nil, err
+	}
+	if err := s.repriceFutureUnbooked(incoming.CourtID, timeutil.Now()); err != nil {
+		return nil, err
+	}
+	return incoming, nil
+}
+
+func (s *CourtService) DeletePriceRule(ruleID uint) error {
+	rule, err := s.priceRules.FindByID(ruleID)
+	if err != nil {
+		return err
+	}
+	if err := s.priceRules.Delete(rule); err != nil {
+		return err
+	}
+	return s.repriceFutureUnbooked(rule.CourtID, timeutil.Now())
+}
+
+func (s *CourtService) validatePriceRule(rule *models.CourtPriceRule, excludeID uint) error {
+	rule.Name = strings.TrimSpace(rule.Name)
+	if rule.Name == "" {
+		return fmt.Errorf("rule name is required")
+	}
+	if rule.DaysMask <= 0 || rule.DaysMask > pricing.AllWeekdaysMask {
+		return fmt.Errorf("days_mask must select at least one valid weekday")
+	}
+	if rule.Price < 0 {
+		return fmt.Errorf("price must be >= 0")
+	}
+	if rule.Priority < 0 || rule.Priority > 10000 {
+		return fmt.Errorf("priority must be between 0 and 10000")
+	}
+	if err := validateOperatingHours(rule.StartTime, rule.EndTime); err != nil {
+		return fmt.Errorf("price rule time range: %w", err)
+	}
+	if rule.EffectiveFrom != nil && rule.EffectiveTo != nil && rule.EffectiveTo.Before(*rule.EffectiveFrom) {
+		return fmt.Errorf("effective_to must be on or after effective_from")
+	}
+
+	existing, err := s.priceRules.ListByCourt(rule.CourtID)
+	if err != nil {
+		return err
+	}
+	for _, other := range existing {
+		if other.ID == excludeID || !rule.IsActive || !other.IsActive || other.Priority != rule.Priority {
+			continue
+		}
+		if rule.DaysMask&other.DaysMask == 0 || !clockRangesOverlap(rule.StartTime, rule.EndTime, other.StartTime, other.EndTime) {
+			continue
+		}
+		if dateRangesOverlap(rule.EffectiveFrom, rule.EffectiveTo, other.EffectiveFrom, other.EffectiveTo) {
+			return fmt.Errorf("price rule overlaps %q at the same priority", other.Name)
+		}
+	}
+	return nil
+}
+
+func clockRangesOverlap(aStart, aEnd, bStart, bEnd string) bool {
+	return aStart < bEnd && bStart < aEnd
+}
+
+func dateRangesOverlap(aFrom, aTo, bFrom, bTo *time.Time) bool {
+	if aTo != nil && bFrom != nil && aTo.Before(*bFrom) {
+		return false
+	}
+	if bTo != nil && aFrom != nil && bTo.Before(*aFrom) {
+		return false
+	}
+	return true
+}
+
+func (s *CourtService) priceForSlot(court models.Court, start time.Time, rules []models.CourtPriceRule) int64 {
+	return pricing.ResolveRulePrice(court.BasePrice, start, rules)
+}
+
+func (s *CourtService) repriceFutureUnbooked(courtID uint, from time.Time) error {
+	court, err := s.courts.FindByID(courtID)
+	if err != nil {
+		return err
+	}
+	slots, err := s.slots.ListFutureUnbookedByCourt(courtID, from)
+	if err != nil {
+		return err
+	}
+
+	rulesByDay := map[string][]models.CourtPriceRule{}
+	for _, slot := range slots {
+		key := slot.StartTime.Format("2006-01-02")
+		rules, ok := rulesByDay[key]
+		if !ok {
+			rules, err = s.priceRules.ListActiveForCourtAndDate(courtID, slot.StartTime)
+			if err != nil {
+				return err
+			}
+			rulesByDay[key] = rules
+		}
+		price := s.priceForSlot(*court, slot.StartTime, rules)
+		if slot.Price != price {
+			if err := s.slots.UpdatePrice(slot.ID, price); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (s *CourtService) AvailableSlots(day time.Time) ([]models.TimeSlot, error) {
 	return s.slots.ListAvailableByDate(day)
 }
+
 func (s *CourtService) DaySlots(day time.Time) ([]repository.SlotDayView, error) {
 	return s.slots.ListByDateWithStatus(day)
 }
@@ -127,19 +270,20 @@ func toPublicSlotDayView(row repository.SlotDayView) repository.PublicSlotDayVie
 			customerType = *row.CustomerType
 		}
 	}
+	displayColor := ""
+	if row.DisplayColor != nil {
+		displayColor = *row.DisplayColor
+	}
 	return repository.PublicSlotDayView{
 		ID: row.ID, CourtID: row.CourtID, CourtName: row.CourtName, CourtType: row.CourtType,
 		StartTime: row.StartTime, EndTime: row.EndTime, Price: row.Price, Booked: row.Booked,
-		CustomerType: customerType, Status: status,
+		CustomerType: customerType, DisplayColor: displayColor, Status: status,
 	}
 }
 
-func (s *CourtService) EnsureDaySlots(day time.Time, intervalMin int, peakStart, peakEnd int, peakMultiplier float64) error {
+func (s *CourtService) EnsureDaySlots(day time.Time, intervalMin int) error {
 	if intervalMin <= 0 {
 		intervalMin = 30
-	}
-	if peakMultiplier <= 0 {
-		peakMultiplier = 1.2
 	}
 	courts, err := s.courts.ListActive()
 	if err != nil {
@@ -154,13 +298,18 @@ func (s *CourtService) EnsureDaySlots(day time.Time, intervalMin int, peakStart,
 		if err != nil {
 			return fmt.Errorf("court %d operating hours: %w", court.ID, err)
 		}
+		rules, err := s.priceRules.ListActiveForCourtAndDate(court.ID, day)
+		if err != nil {
+			return err
+		}
+
 		existing, err := s.slots.ListByCourtAndDate(court.ID, day)
 		if err != nil {
 			return err
 		}
-		existingStart := make(map[int64]struct{}, len(existing))
+		existingStart := make(map[int64]models.TimeSlot, len(existing))
 		for _, slot := range existing {
-			existingStart[slot.StartTime.Unix()] = struct{}{}
+			existingStart[slot.StartTime.Unix()] = slot
 		}
 
 		missing := make([]models.TimeSlot, 0, int(end.Sub(start)/(time.Duration(intervalMin)*time.Minute)))
@@ -169,18 +318,16 @@ func (s *CourtService) EnsureDaySlots(day time.Time, intervalMin int, peakStart,
 			if _, ok := existingStart[cur.Unix()]; ok {
 				continue
 			}
-			price := pricing.CourtSlotPrice(court.BasePrice, cur, peakStart, peakEnd, peakMultiplier)
+			price := s.priceForSlot(court, cur, rules)
 			missing = append(missing, models.TimeSlot{CourtID: court.ID, StartTime: cur, EndTime: next, Price: price})
 		}
 		if err := s.slots.BulkCreate(missing); err != nil {
 			return err
 		}
 
-		// Refresh only currently available slots for the requested day. Booked
-		// slots are intentionally excluded so their original price snapshot is
-		// preserved. This also updates a future slot that becomes available again
-		// after a cancellation or expired hold.
-		if err := s.slots.RepriceUnbookedByCourtForDate(court.ID, day, court.BasePrice, peakStart, peakEnd, peakMultiplier); err != nil {
+		// Only unbooked current/future slots are repriced. Booking totals remain
+		// immutable snapshots of the price accepted at booking time.
+		if err := s.repriceFutureUnbooked(court.ID, timeutil.Now()); err != nil {
 			return err
 		}
 	}

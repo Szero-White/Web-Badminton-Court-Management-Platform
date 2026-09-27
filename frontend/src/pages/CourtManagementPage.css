@@ -116,3 +116,287 @@
   font-weight: 400;
   line-height: 1.55;
 }
+
+.pricing-rules-card {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(34, 55, 53, 0.09);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 30px rgba(34, 55, 53, 0.06);
+}
+
+.pricing-rules-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.pricing-rules-heading h3 {
+  margin: 4px 0 6px;
+}
+
+.pricing-rules-heading p {
+  max-width: 780px;
+  margin: 0;
+  color: rgba(34, 55, 53, 0.6);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.pricing-rules-eyebrow {
+  color: #1d7471;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+}
+
+.pricing-rules-court-select {
+  width: 280px;
+  display: grid;
+  gap: 6px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pricing-base-note {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(29, 116, 113, 0.055);
+  color: rgba(34, 55, 53, 0.72);
+  font-size: 12px;
+}
+
+.pricing-rules-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(420px, 1.4fr);
+  gap: 16px;
+}
+
+.pricing-rule-form,
+.pricing-rule-list {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid rgba(34, 55, 53, 0.08);
+  border-radius: 15px;
+  background: rgba(248, 252, 251, 0.78);
+}
+
+.pricing-rule-form {
+  display: grid;
+  gap: 12px;
+}
+
+.pricing-form-title,
+.pricing-list-title,
+.pricing-rule-name,
+.pricing-rule-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pricing-form-title > div,
+.pricing-list-title > div {
+  display: grid;
+  gap: 3px;
+}
+
+.pricing-form-title small,
+.pricing-list-title small {
+  color: rgba(34, 55, 53, 0.5);
+  font-size: 11px;
+}
+
+.pricing-link-button {
+  padding: 6px 9px;
+  border: 0;
+  background: transparent;
+  color: #1d7471;
+  box-shadow: none;
+  font-size: 12px;
+}
+
+.pricing-day-presets,
+.pricing-weekdays {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.pricing-day-presets button,
+.pricing-weekdays button {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid rgba(34, 55, 53, 0.11);
+  border-radius: 10px;
+  background: #fff;
+  color: rgba(34, 55, 53, 0.68);
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pricing-day-presets button.is-active,
+.pricing-weekdays button.is-selected {
+  border-color: rgba(29, 116, 113, 0.32);
+  background: rgba(29, 116, 113, 0.09);
+  color: #145d59;
+}
+
+.pricing-weekdays button {
+  min-width: 38px;
+  padding-inline: 8px;
+}
+
+.pricing-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pricing-priority-help {
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: rgba(82, 109, 107, 0.06);
+  color: rgba(34, 55, 53, 0.6);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.pricing-active-check {
+  width: fit-content;
+}
+
+.pricing-rule-list {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.pricing-rule-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px;
+  border: 1px solid rgba(34, 55, 53, 0.08);
+  border-radius: 13px;
+  background: #fff;
+}
+
+.pricing-rule-item.is-inactive {
+  opacity: 0.62;
+}
+
+.pricing-rule-main {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.pricing-rule-name {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.pricing-rule-state {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: rgba(100, 116, 115, 0.09);
+  color: rgba(34, 55, 53, 0.58);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pricing-rule-state.active {
+  background: rgba(29, 116, 113, 0.09);
+  color: #176965;
+}
+
+.pricing-rule-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  color: rgba(34, 55, 53, 0.57);
+  font-size: 11px;
+}
+
+.pricing-rule-price {
+  color: #145d59;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.pricing-rule-price small,
+.pricing-rule-effective {
+  color: rgba(34, 55, 53, 0.48);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.pricing-rule-actions {
+  align-self: center;
+  flex: 0 0 auto;
+}
+
+.pricing-rule-actions button {
+  padding: 7px 9px;
+  border: 1px solid rgba(34, 55, 53, 0.1);
+  background: rgba(248, 252, 251, 0.9);
+  color: #315d5a;
+  box-shadow: none;
+  font-size: 11px;
+}
+
+.pricing-rule-actions button.danger {
+  color: #b54747;
+}
+
+.pricing-empty-state {
+  display: grid;
+  gap: 4px;
+  padding: 22px 16px;
+  border: 1px dashed rgba(34, 55, 53, 0.15);
+  border-radius: 12px;
+  text-align: center;
+  color: rgba(34, 55, 53, 0.56);
+}
+
+.pricing-empty-state span {
+  font-size: 12px;
+}
+
+@media (max-width: 960px) {
+  .pricing-rules-heading,
+  .pricing-rule-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pricing-rules-court-select {
+    width: 100%;
+  }
+
+  .pricing-rules-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pricing-rule-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .pricing-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

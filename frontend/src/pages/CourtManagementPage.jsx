@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import AppToast from '../components/feedback/AppToast';
 import PageBackButton from '../components/navigation/PageBackButton';
+import CourtPricingRulesPanel from '../components/pricing/CourtPricingRulesPanel';
 import { adminApi } from '../services/api';
+import useAppNotice from '../hooks/useAppNotice';
 import './CourtManagementPage.css';
 
 function normalizePriceInput(value, fallback = 0) {
@@ -16,7 +18,7 @@ function normalizePriceInput(value, fallback = 0) {
 export default function CourtManagementPage() {
   const [courts, setCourts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const { notice: message, setNotice: setMessage, clearNotice } = useAppNotice();
   const [editingCourt, setEditingCourt] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -132,7 +134,7 @@ export default function CourtManagementPage() {
         <PageBackButton to="/admin" label="Quay lại Tổng quan" />
       </div>
 
-      <AppToast message={message} />
+      <AppToast message={message} onDismiss={clearNotice} />
 
       <div className="admin-forms">
         {/* Form tạo sân */}
@@ -284,6 +286,8 @@ export default function CourtManagementPage() {
           </div>
         </div>
       </div>
+
+      <CourtPricingRulesPanel courts={courts} onMessage={setMessage} />
     </section>
   );
 }
