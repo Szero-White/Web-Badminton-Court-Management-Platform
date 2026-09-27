@@ -3,9 +3,9 @@ import { beverageApi, bookingApi } from '../services/api';
 import AppToast from '../components/feedback/AppToast';
 import ScheduleCourtFilterBar from '../components/schedule/ScheduleCourtFilterBar';
 import ScheduleDateNavigator from '../components/schedule/ScheduleDateNavigator';
-import ScheduleLegend from '../components/schedule/ScheduleLegend';
 import ScheduleSlotCell from '../components/schedule/ScheduleSlotCell';
 import { todayString } from '../utils/dateTime';
+import useAppNotice from '../hooks/useAppNotice';
 import './CustomerPage.css';
 
 export default function CustomerPage() {
@@ -13,7 +13,7 @@ export default function CustomerPage() {
   const [daySlots, setDaySlots] = useState([]);
   const [courtCatalog, setCourtCatalog] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const { notice: message, setNotice: setMessage, clearNotice } = useAppNotice();
   const [selectedCourtIds, setSelectedCourtIds] = useState([]);
   const [beverages, setBeverages] = useState([]);
 
@@ -142,7 +142,7 @@ export default function CustomerPage() {
 
   return (
     <section className="panel customer customer-soft-layout">
-      <AppToast message={message} />
+      <AppToast message={message} onDismiss={clearNotice} />
 
       <ScheduleDateNavigator
         value={day}
@@ -162,7 +162,6 @@ export default function CustomerPage() {
         />
       </ScheduleDateNavigator>
 
-      <ScheduleLegend />
 
       <div className="heatmap-wrapper soft-heatmap-wrapper" aria-busy={loading}>
         <table className="heatmap">

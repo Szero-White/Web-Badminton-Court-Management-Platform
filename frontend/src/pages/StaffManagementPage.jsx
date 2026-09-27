@@ -3,6 +3,7 @@ import AppToast from '../components/feedback/AppToast';
 import PageBackButton from '../components/navigation/PageBackButton';
 import { adminApi } from '../services/api';
 import AppSelect from '../components/ui/AppSelect';
+import useAppNotice from '../hooks/useAppNotice';
 import './StaffManagementPage.css';
 
 const EMPTY_FORM = { full_name: '', email: '', phone: '', password: '', role: 'staff' };
@@ -49,7 +50,7 @@ function StaffCard({ member, onEdit, onDelete }) {
 export default function StaffManagementPage() {
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const { notice: message, setNotice: setMessage, clearNotice } = useAppNotice();
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -95,7 +96,7 @@ export default function StaffManagementPage() {
 
   return <div className="admin-container staff-management-page">
     <div className="staff-page-heading"><div><p className="staff-eyebrow">Quản trị hệ thống</p><h1>Quản lý nhân viên</h1><p>Quản lý tài khoản nhân viên và quyền quản trị theo vai trò.</p></div><div className="page-header-actions"><button type="button" className="btn-secondary" onClick={loadStaff} disabled={loading}>{loading ? 'Đang tải...' : 'Làm mới'}</button><button type="button" className="btn-primary" onClick={startCreate}>Thêm nhân viên</button><PageBackButton to="/admin" label="Quay lại Tổng quan" /></div></div>
-    <AppToast message={message} />
+    <AppToast message={message} onDismiss={clearNotice} />
     {showForm && <StaffForm editingId={editingId} form={form} onChange={updateField} onSubmit={handleSubmit} onCancel={resetForm} />}
     <StaffStats {...stats} />
     <div className="staff-toolbar"><label htmlFor="staff-search">Tìm kiếm</label><input id="staff-search" type="search" placeholder="Tên, email hoặc số điện thoại" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /><span>{filteredStaff.length} kết quả</span></div>

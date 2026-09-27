@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import AppToast from '../components/feedback/AppToast';
 import PageBackButton from '../components/navigation/PageBackButton';
 import { staffApi } from '../services/api';
+import useAppNotice from '../hooks/useAppNotice';
 import './AdminCheckinPage.css';
 
 function formatTime(value) {
@@ -44,7 +45,7 @@ function statusLabel(value) {
 }
 
 export default function AdminCheckinPage() {
-  const [message, setMessage] = useState('Admin check-in dùng chung dữ liệu booking với nhân viên.');
+  const { notice: message, setNotice: setMessage, clearNotice } = useAppNotice({ text: 'Admin check-in dùng chung dữ liệu booking với nhân viên.', tone: 'info' });
   const [checkInCode, setCheckInCode] = useState('');
   const [lastCheckin, setLastCheckin] = useState(null);
   const [checkinFeed, setCheckinFeed] = useState([]);
@@ -91,7 +92,7 @@ export default function AdminCheckinPage() {
         <PageBackButton to="/admin" label="Quay lại Tổng quan" />
       </div>
 
-      <AppToast message={message} />
+      <AppToast message={message} onDismiss={clearNotice} />
 
       <div className="admin-checkin-grid">
         <article className="admin-checkin-card admin-checkin-card--wide">

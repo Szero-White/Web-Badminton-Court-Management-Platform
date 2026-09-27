@@ -940,3 +940,278 @@ body {
     justify-content: flex-start;
   }
 }
+
+
+/* ---------- V12 unified booking edit / payment / color ---------- */
+.booking-modal-booking-code {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid rgba(34, 55, 53, 0.1);
+  border-radius: 12px;
+  background: #f8faf8;
+}
+.booking-modal-booking-code span {
+  color: rgba(34, 55, 53, 0.52);
+  font-size: 11px;
+  font-weight: 500;
+}
+.booking-modal-booking-code strong {
+  color: rgba(34, 55, 53, 0.9);
+  font-size: 13px;
+  font-weight: 700;
+}
+.booking-payment-panel,
+.booking-color-section {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(29, 116, 113, 0.12);
+  border-radius: 16px;
+  background: rgba(29, 116, 113, 0.035);
+}
+.booking-color-section {
+  border-color: rgba(34, 55, 53, 0.1);
+  background: #fafbf9;
+}
+.booking-modal-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.booking-modal-section-heading h4 {
+  margin: 0;
+  color: rgba(34, 55, 53, 0.9);
+  font-size: 14px;
+  font-weight: 700;
+}
+.booking-modal-section-heading p {
+  margin: 4px 0 0;
+  color: rgba(34, 55, 53, 0.55);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.booking-payment-balance {
+  display: grid;
+  justify-items: end;
+  gap: 3px;
+  color: rgba(34, 55, 53, 0.58);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.booking-payment-balance strong {
+  color: #1d7471;
+  font-weight: 700;
+}
+.booking-payment-status {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.booking-payment-status label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid rgba(34, 55, 53, 0.11);
+  border-radius: 11px;
+  background: #fff;
+  color: rgba(34, 55, 53, 0.7);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+}
+.booking-payment-status label.is-selected {
+  border-color: rgba(29, 116, 113, 0.45);
+  background: rgba(29, 116, 113, 0.09);
+  color: #1d6662;
+  box-shadow: inset 0 0 0 1px rgba(29, 116, 113, 0.08);
+}
+.booking-payment-status input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.booking-payment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.booking-payment-reason {
+  margin-top: -2px;
+}
+.booking-color-picker {
+  display: grid;
+  gap: 12px;
+}
+.booking-color-palette {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(28px, 1fr));
+  gap: 8px;
+}
+.booking-color-swatch {
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1.55 / 1;
+  min-height: 30px;
+  padding: 0;
+  border: 2px solid transparent !important;
+  border-radius: 9px !important;
+  background: var(--booking-swatch) !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06) !important;
+}
+.booking-color-swatch.is-selected {
+  border-color: #1d7471 !important;
+  box-shadow: 0 0 0 3px rgba(29, 116, 113, 0.12) !important;
+}
+.booking-color-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  color: rgba(34, 55, 53, 0.62);
+  font-size: 12px;
+  font-weight: 600;
+}
+.booking-color-custom input[type="color"] {
+  width: 42px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid rgba(34, 55, 53, 0.12);
+  border-radius: 9px;
+  background: #fff;
+}
+.booking-color-custom code {
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: rgba(34, 55, 53, 0.06);
+  color: rgba(34, 55, 53, 0.72);
+  font-size: 11px;
+}
+.booking-modal-actions-spacer {
+  flex: 1;
+}
+.booking-modal-danger {
+  border-color: rgba(185, 62, 62, 0.2) !important;
+  background: rgba(185, 62, 62, 0.07) !important;
+  color: #a43d3d !important;
+}
+.staff-action-grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 720px) {
+  .booking-modal-section-heading {
+    flex-direction: column;
+  }
+  .booking-payment-balance {
+    justify-items: start;
+  }
+  .booking-payment-status,
+  .booking-payment-grid {
+    grid-template-columns: 1fr;
+  }
+  .booking-color-palette {
+    grid-template-columns: repeat(4, minmax(34px, 1fr));
+  }
+}
+
+/* V12E - shared booking reschedule editor */
+.booking-schedule-editor {
+  padding: 16px;
+  border: 1px solid rgba(34, 55, 53, 0.10);
+  border-radius: 16px;
+  background: rgba(247, 250, 249, 0.84);
+}
+
+.booking-schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.booking-schedule-total {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  color: rgba(34, 55, 53, 0.58);
+  font-size: 11px;
+}
+
+.booking-schedule-total strong {
+  color: #1f6f6b;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.booking-schedule-error {
+  margin: 10px 0 0;
+  color: #a64f45;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+@media (max-width: 720px) {
+  .booking-schedule-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-schedule-total {
+    justify-items: start;
+  }
+}
+
+/* V12F - unified notification and booking feedback */
+.app-toast {
+  grid-template-columns: 8px minmax(0, 1fr) 32px;
+}
+
+.app-toast-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.app-toast-title {
+  color: rgba(34, 55, 53, 0.92);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.app-toast--warning .app-toast-indicator { background: #b9873e; }
+
+.booking-modal-feedback {
+  margin: 0 0 14px;
+  padding: 11px 13px;
+  border: 1px solid rgba(196, 95, 82, 0.22);
+  border-radius: 12px;
+  background: rgba(196, 95, 82, 0.075);
+  color: #7b3e35;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.45;
+}
+
+.booking-modal-feedback strong {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 700;
+}
+
+.booking-modal-feedback--warning {
+  border-color: rgba(185, 135, 62, 0.24);
+  background: rgba(185, 135, 62, 0.08);
+  color: #72551f;
+}
+
+.booking-modal-feedback--info {
+  border-color: rgba(29, 116, 113, 0.2);
+  background: rgba(29, 116, 113, 0.065);
+  color: #285f5b;
+}

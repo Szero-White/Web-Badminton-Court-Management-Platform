@@ -5,6 +5,7 @@ import { adminApi } from '../services/api';
 import BeverageForm from '../features/beverages/components/BeverageForm';
 import BeverageHistoryPanel from '../features/beverages/components/BeverageHistoryPanel';
 import BeverageInventoryTable from '../features/beverages/components/BeverageInventoryTable';
+import useAppNotice from '../hooks/useAppNotice';
 import './BeverageManagementPage.css';
 
 const EMPTY_FORM = {
@@ -24,7 +25,7 @@ export default function BeverageManagementPage() {
   const [beverages, setBeverages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
+  const { notice: message, setNotice: setMessage, clearNotice } = useAppNotice();
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [historyItem, setHistoryItem] = useState(null);
@@ -146,7 +147,7 @@ export default function BeverageManagementPage() {
         </div>
       </header>
 
-      <AppToast message={message} />
+      <AppToast message={message} onDismiss={clearNotice} />
 
       <BeverageForm
         form={form}

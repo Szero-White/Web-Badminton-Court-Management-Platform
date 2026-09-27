@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { localizeApiMessage } from '../../utils/apiErrorMessage';
 
 function inferTone(message) {
   const value = String(message || '').toLowerCase();
-  if (/không thể|không tải|thất bại|lỗi|không hợp lệ|đã hết|đã được đặt|không còn/.test(value)) {
+  if (/không thể|không tải|thất bại|lỗi|không hợp lệ|đã hết|đã được đặt|không còn|vui lòng|bắt buộc/.test(value)) {
     return 'error';
   }
   if (/thành công|đã tạo|đã lưu|đã cập nhật|đã hủy|đã ghi nhận|đã check-in|đã nhập|đã bán|giữ chỗ/.test(value)) {
@@ -12,12 +13,32 @@ function inferTone(message) {
   return 'info';
 }
 
-export default function AppToast({ message, tone, duration = 4200, onDismiss }) {
-  const [visible, setVisible] = useState(Boolean(message));
-  const resolvedTone = useMemo(() => tone || inferTone(message), [message, tone]);
+function normalizeNotice(message, explicitTone) {
+  if (!message) return null;
+
+  if (typeof message === 'object' && message.text) {
+    return {
+      id: message.id || message.text,
+      text: localizeApiMessage(String(message.text)) || String(message.text),
+      title: message.title || '',
+      tone: explicitTone || message.tone || inferTone(message.text)
+    };
+  }
+
+  return {
+    id: String(message),
+    text: localizeApiMessage(String(message)) || String(message),
+    title: '',
+    tone: explicitTone || inferTone(message)
+  };
+}
+
+export default function AppToast({ message, tone, duration = 5200, onDismiss }) {
+  const notice = useMemo(() => normalizeNotice(message, tone), [message, tone]);
+  const [visible, setVisible] = useState(Boolean(notice));
 
   useEffect(() => {
-    if (!message) {
+    if (!notice) {
       setVisible(false);
       return undefined;
     }
@@ -31,15 +52,18 @@ export default function AppToast({ message, tone, duration = 4200, onDismiss }) 
     }, duration);
 
     return () => window.clearTimeout(timer);
-  }, [message, duration, onDismiss]);
+  }, [notice?.id, duration, onDismiss]);
 
-  if (!message || !visible || typeof document === 'undefined') return null;
+  if (!notice || !visible || typeof document === 'undefined') return null;
 
   return createPortal(
-    <div className="app-toast-region" aria-live="polite" aria-atomic="true">
-      <div className={`app-toast app-toast--${resolvedTone}`} role={resolvedTone === 'error' ? 'alert' : 'status'}>
+    <div className="app-toast-region" aria-live={notice.tone === 'error' ? 'assertive' : 'polite'} aria-atomic="true">
+      <div className={`app-toast app-toast--${notice.tone}`} role={notice.tone === 'error' ? 'alert' : 'status'}>
         <span className="app-toast-indicator" aria-hidden="true" />
-        <span className="app-toast-message">{message}</span>
+        <div className="app-toast-copy">
+          {notice.title ? <strong className="app-toast-title">{notice.title}</strong> : null}
+          <span className="app-toast-message">{notice.text}</span>
+        </div>
         <button
           type="button"
           className="app-toast-close"

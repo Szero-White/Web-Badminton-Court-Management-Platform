@@ -1,7 +1,20 @@
-import { bookingStatusLabel, bookingTypeLabel, bookingTypeTone } from '../../utils/bookingPresentation';
+import { bookingStatusLabel, bookingTypeLabel, buildBookingHoverDetails } from '../../utils/bookingPresentation';
 
 function priceLabel(value) {
   return Number(value || 0).toLocaleString('vi-VN');
+}
+
+function normalizeHex(hex, fallback = '#6f9f94') {
+  const value = String(hex || '').trim();
+  return /^#[0-9a-fA-F]{6}$/.test(value) ? value.toLowerCase() : fallback;
+}
+
+function mixWithWhite(hex, whiteRatio = 0.78) {
+  const value = normalizeHex(hex).slice(1);
+  const ratio = Math.min(0.92, Math.max(0, whiteRatio));
+  const channels = [0, 2, 4].map((offset) => parseInt(value.slice(offset, offset + 2), 16));
+  const mixed = channels.map((channel) => Math.round(channel * (1 - ratio) + 255 * ratio));
+  return `#${mixed.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
 }
 
 export default function ScheduleSlotCell({
@@ -11,7 +24,8 @@ export default function ScheduleSlotCell({
   onSelect,
   slotCount = 1,
   rangeText = '',
-  note = ''
+  note = '',
+  bookingGroup = null
 }) {
   if (!slot) {
     return <td className="heatmap-cell empty">-</td>;
@@ -42,28 +56,42 @@ export default function ScheduleSlotCell({
     );
   }
 
-  const customerType = slot.customer_type || '';
-  const typeTone = bookingTypeTone(customerType);
-  const typeLabel = bookingTypeLabel(customerType);
+  const typeLabel = bookingTypeLabel(slot.customer_type || '');
+  const status = String(slot.status || '').toLowerCase();
   const statusLabel = bookingStatusLabel(slot.status);
+  const showStatus = status && !['confirmed', 'booked'].includes(status);
   const privateDetails = mode === 'manage';
-  const bookingCode = slot.booking_code || '';
   const customerName = slot.customer_name || '';
+  const displayColor = normalizeHex(slot.display_color);
+  const hoverDetails = privateDetails
+    ? buildBookingHoverDetails(bookingGroup, {
+      ...slot,
+      booking_note: note,
+      start_time: bookingGroup?.start_time || slot.start_time,
+      end_time: bookingGroup?.end_time || slot.end_time
+    })
+    : '';
+
+  const cardStyle = {
+    background: mixWithWhite(displayColor, 0.78),
+    color: '#30413e',
+    borderColor: mixWithWhite(displayColor, 0.42),
+    '--booking-slot-color': displayColor,
+    '--booking-slot-soft': mixWithWhite(displayColor, 0.78)
+  };
 
   const content = (
     <div className="schedule-slot-card-content">
       <div className="schedule-slot-badges">
-        <span className={`schedule-slot-type schedule-slot-type--${typeTone}`}>{typeLabel}</span>
-        <span className="schedule-slot-status">{statusLabel}</span>
+        <span className="schedule-slot-type">{typeLabel}</span>
+        {showStatus ? <span className="schedule-slot-status">{statusLabel}</span> : null}
       </div>
       {privateDetails ? (
         <>
           <strong className="schedule-slot-customer">{customerName || 'Khách tại quầy'}</strong>
-          <span className="schedule-slot-meta">
-            {bookingCode || 'Booking'}{slotCount > 1 ? ` · ${slotCount} slot` : ''}
+          <span className="schedule-slot-summary">
+            {rangeText || 'Đã đặt'}{slotCount > 1 ? ` · ${slotCount} khung` : ''}
           </span>
-          {rangeText ? <span className="schedule-slot-range">{rangeText}</span> : null}
-          {note ? <span className="schedule-slot-note" title={note}>Có ghi chú</span> : null}
         </>
       ) : (
         <span className="schedule-slot-public-copy">Khung giờ đã có lịch</span>
@@ -72,18 +100,24 @@ export default function ScheduleSlotCell({
   );
 
   return (
-    <td className={`heatmap-cell booked schedule-slot-cell schedule-slot-cell--${typeTone} ${selected ? 'is-selected' : ''}`}>
+    <td className={`heatmap-cell booked schedule-slot-cell schedule-slot-cell--booked ${selected ? 'is-selected' : ''}`}>
       {interactive ? (
         <button
           type="button"
-          className="schedule-slot-card schedule-slot-card--interactive schedule-slot-card--booked"
+          className="schedule-slot-card schedule-slot-card--interactive schedule-slot-card--booked schedule-slot-card--custom"
+          style={cardStyle}
           onClick={() => onSelect(slot)}
+          data-note={hoverDetails || undefined}
           aria-label={`${typeLabel}, ${customerName || 'khách'}, ${statusLabel}`}
         >
           {content}
         </button>
       ) : (
-        <div className="schedule-slot-card schedule-slot-card--readonly schedule-slot-card--booked">
+        <div
+          className="schedule-slot-card schedule-slot-card--readonly schedule-slot-card--booked schedule-slot-card--custom"
+          style={cardStyle}
+          data-note={hoverDetails || undefined}
+        >
           {content}
         </div>
       )}

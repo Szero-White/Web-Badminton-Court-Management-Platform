@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppToast from '../components/feedback/AppToast';
 import { dashboardApi } from '../services/api';
+import useAppNotice from '../hooks/useAppNotice';
 import './AdminPage.css';
 
 const NAV_ITEMS = [
@@ -25,7 +26,7 @@ function formatMoney(value) {
 
 export default function AdminPage() {
   const [summary, setSummary] = useState(null);
-  const [error, setError] = useState('');
+  const { notice: error, setNotice: setError, clearNotice } = useAppNotice();
   const [loading, setLoading] = useState(true);
 
   async function loadSummary() {
@@ -56,7 +57,7 @@ export default function AdminPage() {
         </button>
       </div>
 
-      <AppToast message={error} tone="error" />
+      <AppToast message={error} tone="error" onDismiss={clearNotice} />
 
       <div className="metrics-grid admin-overview-metrics" aria-busy={loading}>
         <article className="metric-card"><label>Doanh thu ngày</label><h3>{formatMoney(summary?.daily_revenue)} VND</h3></article>

@@ -5,6 +5,7 @@ import CounterInventoryTable from '../features/beverages/components/CounterInven
 import CounterToolbar from '../features/beverages/components/CounterToolbar';
 import { staffApi } from '../services/api';
 import { getShiftName } from '../utils/shift';
+import useAppNotice from '../hooks/useAppNotice';
 import './BeverageCounterPage.css';
 import './BeverageCounterSummary.css';
 
@@ -16,7 +17,7 @@ export default function BeverageCounterPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const { notice: message, setNotice: setMessage, clearNotice } = useAppNotice();
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [restockPaymentMethod, setRestockPaymentMethod] = useState('cash');
   const [shift, setShift] = useState(getShiftName());
@@ -144,7 +145,7 @@ export default function BeverageCounterPage() {
         </div>
       </div>
 
-      <AppToast message={message} />
+      <AppToast message={message} onDismiss={clearNotice} />
 
       <CounterToolbar
         shift={shift}

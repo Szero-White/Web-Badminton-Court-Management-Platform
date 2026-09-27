@@ -15,6 +15,9 @@ const EXACT_MESSAGES = new Map([
   ['booking hold has expired', 'Thời gian giữ chỗ của booking đã hết.'],
   ['deposit amount must be greater than zero', 'Số tiền cọc phải lớn hơn 0.'],
   ['payment method is required', 'Vui lòng chọn phương thức thanh toán.'],
+  ['payment total must be zero or greater', 'Tổng tiền đã thu phải lớn hơn hoặc bằng 0.'],
+  ['payment total cannot exceed total price', 'Tổng tiền đã thu không được vượt quá tổng tiền booking.'],
+  ['payment adjustment reason is required when reducing received amount', 'Vui lòng nhập lý do khi giảm số tiền đã thu.'],
   ['booking cannot receive deposit in current status', 'Trạng thái booking hiện tại không cho phép nhận cọc.'],
   ['phone is required', 'Vui lòng nhập số điện thoại.'],
   ['booking code or phone is required', 'Vui lòng nhập mã booking hoặc số điện thoại.'],
@@ -43,6 +46,38 @@ const EXACT_MESSAGES = new Map([
   ['beverage already deleted', 'Mặt hàng này đã được xóa.']
 ]);
 
+const HTTP_STATUS_MESSAGES = new Map([
+  [400, 'Yêu cầu chưa hợp lệ. Vui lòng kiểm tra lại thông tin đã nhập.'],
+  [401, 'Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.'],
+  [403, 'Bạn không có quyền thực hiện thao tác này.'],
+  [404, 'Không tìm thấy dữ liệu hoặc chức năng yêu cầu. Vui lòng tải lại trang và thử lại.'],
+  [409, 'Dữ liệu đã thay đổi hoặc bị trùng với thao tác khác. Vui lòng tải lại và thử lại.'],
+  [422, 'Thông tin chưa hợp lệ. Vui lòng kiểm tra các trường và thử lại.'],
+  [429, 'Bạn thao tác quá nhanh. Vui lòng đợi một chút rồi thử lại.'],
+  [500, 'Máy chủ đang gặp lỗi. Vui lòng thử lại sau.'],
+  [502, 'Không thể kết nối tới dịch vụ xử lý. Vui lòng thử lại sau.'],
+  [503, 'Dịch vụ hiện tạm thời không khả dụng. Vui lòng thử lại sau.'],
+  [504, 'Máy chủ phản hồi quá lâu. Vui lòng thử lại sau.']
+]);
+
+function messageForHttpStatus(status) {
+  const code = Number(status || 0);
+  if (!code) return '';
+
+  if (HTTP_STATUS_MESSAGES.has(code)) {
+    return HTTP_STATUS_MESSAGES.get(code);
+  }
+
+  if (code >= 500) {
+    return 'Máy chủ đang gặp lỗi. Vui lòng thử lại sau.';
+  }
+
+  if (code >= 400) {
+    return 'Không thể thực hiện thao tác với dữ liệu hiện tại. Vui lòng kiểm tra và thử lại.';
+  }
+
+  return '';
+}
 const DYNAMIC_MESSAGES = [
   {
     pattern: /^slot\s+(.+)\s+is already booked$/i,
@@ -76,5 +111,36 @@ export function localizeApiMessage(message) {
     }
   }
 
+  const axiosStatusMatch = normalized.match(/^Request failed with status code\s+(\d{3})$/i);
+  if (axiosStatusMatch) {
+    return messageForHttpStatus(Number(axiosStatusMatch[1])) || 'Không thể thực hiện thao tác. Vui lòng thử lại.';
+  }
+
+  if (/^Network Error$/i.test(normalized)) {
+    return 'Không thể kết nối tới máy chủ. Vui lòng kiểm tra kết nối và thử lại.';
+  }
+
+  if (/timeout/i.test(normalized)) {
+    return 'Yêu cầu mất quá nhiều thời gian xử lý. Vui lòng thử lại.';
+  }
+
   return message;
+}
+
+export function getApiErrorMessage(error, fallback = 'Không thể thực hiện thao tác. Vui lòng thử lại.') {
+  const responseMessage =
+    error?.response?.data?.error?.message ||
+    error?.response?.data?.message;
+
+  if (responseMessage) {
+    return localizeApiMessage(responseMessage) || fallback;
+  }
+
+  const statusMessage = messageForHttpStatus(error?.response?.status);
+  if (statusMessage) {
+    return statusMessage;
+  }
+
+  const raw = error?.message;
+  return localizeApiMessage(raw) || fallback;
 }
