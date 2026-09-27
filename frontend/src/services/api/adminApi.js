@@ -22,5 +22,7 @@ export const adminApi = {
   listCourtPriceRules: (courtId) => api.get(`/admin/courts/${courtId}/price-rules`),
   createCourtPriceRule: (courtId, payload) => api.post(`/admin/courts/${courtId}/price-rules`, payload),
   updateCourtPriceRule: (ruleId, payload) => api.put(`/admin/price-rules/${ruleId}`, payload),
-  deleteCourtPriceRule: (ruleId) => api.delete(`/admin/price-rules/${ruleId}`)
+  deleteCourtPriceRule: (ruleId) => api.delete(`/admin/price-rules/${ruleId}`),
+  listActivity: (params = {}) => api.get('/admin/activity', { params }),
+  listActivityActors: () => api.get('/admin/activity/actors')
 };

@@ -12,6 +12,7 @@ import DashboardRevenuePage from '../pages/DashboardRevenuePage';
 import StaffTransactionPage from '../pages/StaffTransactionPage';
 import BeverageCounterPage from '../pages/BeverageCounterPage';
 import StaffManagementPage from '../pages/StaffManagementPage';
+import AdminActivityPage from '../pages/AdminActivityPage';
 
 const protectedPage = (roles, page) => <ProtectedRoute roles={roles}>{page}</ProtectedRoute>;
 export default function AppRoutes() {
@@ -28,6 +29,7 @@ export default function AppRoutes() {
     <Route path="/admin/courts" element={protectedPage(['admin'], <CourtManagementPage />)} />
     <Route path="/admin/revenue" element={protectedPage(['admin'], <DashboardRevenuePage />)} />
     <Route path="/admin/staff" element={protectedPage(['admin'], <StaffManagementPage />)} />
+    <Route path="/admin/activity" element={protectedPage(['admin'], <AdminActivityPage />)} />
     <Route path="/admin/beverages" element={protectedPage(['admin'], <BeverageManagementPage />)} />
     <Route path="*" element={<Navigate to="/login" replace />} />
   </Routes>;

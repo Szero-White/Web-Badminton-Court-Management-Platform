@@ -90,3 +90,10 @@ Operational accounting is date-scoped and ledger-based:
 ## Booking reschedule transaction
 
 Staff and Admin share the same booking edit workflow. Rescheduling is not implemented as independent per-slot updates. `BookingService.UpdateBookingGroup` locks the active booking group and selected target slots, validates continuity/conflicts, recalculates current prices, reconciles the group payment allocation, and commits the schedule/customer/payment/display changes in one database transaction. This prevents partial moves and keeps the schedule grid, pricing engine, payment ledger, and audit trail consistent.
+
+
+## Operational audit center
+
+Admin activity tracking is implemented as a read-only aggregation layer over `audit_logs`, booking `payments`, and staff `transactions`. Booking lifecycle mutations such as counter confirmation, updates, rescheduling, payment changes, cancellation, and check-in emit explicit audit events. Staff beverage/finance activity is represented by the transaction ledger.
+
+Internal user deletion is soft-delete based so actor identity remains resolvable in historical audit records while deactivated accounts cannot authenticate or appear in normal staff lists.

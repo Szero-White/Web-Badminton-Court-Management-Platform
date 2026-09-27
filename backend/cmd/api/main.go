@@ -41,10 +41,11 @@ func main() {
 	bookingSvc := service.NewBookingService(database, cfg, repos.Users, repos.Slots, repos.Bookings, repos.Payments, repos.PriceRules, redisClient)
 	dashboardSvc := service.NewDashboardService(repos.Bookings, repos.Payments, repos.Transactions)
 	transactionSvc := service.NewTransactionService(repos.Transactions, repos.Payments)
+	activitySvc := service.NewActivityService(repos.Activity)
 
 	handlers := server.Handlers{
 		Auth: handler.NewAuthHandler(authSvc), Admin: handler.NewAdminHandler(authSvc, beverageSvc), StaffBeverage: handler.NewStaffBeverageHandler(beverageSvc),
-		Court: handler.NewCourtHandler(courtSvc), Booking: handler.NewBookingHandler(bookingSvc), Dashboard: handler.NewDashboardHandler(dashboardSvc), Transaction: handler.NewTransactionHandler(transactionSvc),
+		Court: handler.NewCourtHandler(courtSvc), Booking: handler.NewBookingHandler(bookingSvc), Dashboard: handler.NewDashboardHandler(dashboardSvc), Transaction: handler.NewTransactionHandler(transactionSvc), Activity: handler.NewActivityHandler(activitySvc),
 	}
 	router := server.NewRouter(server.RouterDependencies{Config: cfg, Database: database, Redis: redisClient, Handlers: handlers})
 

@@ -66,3 +66,11 @@ Operational endpoints: `GET /health` (process liveness) and `GET /ready` (databa
 Updates an active booking group atomically. The payload includes the complete target `time_slot_ids` plus editable customer, payment, note, and display-color fields. The backend validates that target slots are continuous, on one court/day, not in the past, and not occupied by another active booking. Slot prices are refreshed through the pricing engine before commit. If any validation fails, the transaction is rolled back and the original booking remains unchanged.
 
 When the new total is lower than the amount already collected, `payment_adjustment_reason` is required. Schedule changes are recorded in the audit log as `booking_group_rescheduled`.
+
+
+## Admin activity audit
+
+- `GET /api/v1/admin/activity` — Admin-only activity feed. Supports `from`, `to`, `actor_id`, `category`, `q`, `limit`, and `offset`.
+- `GET /api/v1/admin/activity/actors` — Admin-only actor directory, including deactivated staff accounts retained for audit history.
+
+The activity feed consolidates domain audit logs, booking payment ledger entries, and staff transaction records so operational changes remain traceable.

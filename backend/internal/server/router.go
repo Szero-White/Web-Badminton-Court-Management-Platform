@@ -24,6 +24,7 @@ type Handlers struct {
 	Booking       *handler.BookingHandler
 	Dashboard     *handler.DashboardHandler
 	Transaction   *handler.TransactionHandler
+	Activity      *handler.ActivityHandler
 }
 
 type RouterDependencies struct {
@@ -124,4 +125,6 @@ func registerAPIRoutes(router *gin.Engine, cfg *config.Config, h Handlers) {
 	admin.PUT("/price-rules/:rule_id", h.Court.UpdatePriceRule)
 	admin.DELETE("/price-rules/:rule_id", h.Court.DeletePriceRule)
 	admin.GET("/dashboard/summary", h.Dashboard.Summary)
+	admin.GET("/activity", h.Activity.List)
+	admin.GET("/activity/actors", h.Activity.Actors)
 }

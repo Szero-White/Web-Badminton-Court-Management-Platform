@@ -187,7 +187,11 @@ func (h *BookingHandler) CheckIn(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "BAD_REQUEST", err.Error())
 		return
 	}
-	booking, err := h.booking.CheckIn(req.CodeOrPhone)
+	actorID, actorRole, ok := bookingActor(c)
+	if !ok {
+		return
+	}
+	booking, err := h.booking.CheckIn(actorID, actorRole, req.CodeOrPhone)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "CHECKIN_FAILED", err.Error())
 		return

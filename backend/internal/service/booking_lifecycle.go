@@ -117,6 +117,12 @@ func (s *BookingService) ConfirmDeposit(ctx context.Context, actorID uint, actor
 		if err := bookings.Update(locked); err != nil {
 			return err
 		}
+		if err := tx.Create(&models.AuditLog{
+			ActorID: actorID, Action: "booking_payment_received", TargetType: "booking", TargetID: fmt.Sprint(locked.ID),
+			Payload: fmt.Sprintf(`{"amount":%d,"method":%q,"reference":%q,"actor_role":%q}`, amount, method, strings.TrimSpace(reference), actorRole),
+		}).Error; err != nil {
+			return err
+		}
 		booking = locked
 		return nil
 	})
@@ -181,6 +187,12 @@ func (s *BookingService) CancelBooking(ctx context.Context, actorID uint, actorR
 				return err
 			}
 		}
+		if err := tx.Create(&models.AuditLog{
+			ActorID: actorID, Action: "booking_canceled", TargetType: "booking", TargetID: fmt.Sprint(locked.ID),
+			Payload: fmt.Sprintf(`{"reason":%q,"refund_amount":%d,"actor_role":%q,"booking_code":%q}`, reason, refund, actorRole, locked.BookingCode),
+		}).Error; err != nil {
+			return err
+		}
 		booking = locked
 		return nil
 	})
@@ -204,30 +216,44 @@ func authorizeBookingActor(booking *models.Booking, actorID uint, actorRole mode
 	return ErrBookingAccessDenied
 }
 
-func (s *BookingService) CheckIn(codeOrPhone string) (*models.Booking, error) {
+func (s *BookingService) CheckIn(actorID uint, actorRole models.Role, codeOrPhone string) (*models.Booking, error) {
 	codeOrPhone = strings.TrimSpace(codeOrPhone)
 	if codeOrPhone == "" {
 		return nil, errors.New("booking code or phone is required")
 	}
-	booking, err := s.bookings.FindByCodeOrPhone(codeOrPhone)
-	if err != nil {
-		return nil, err
-	}
-	if booking.Status == models.BookingCheckedIn {
-		return booking, nil
-	}
-	if booking.Status != models.BookingConfirmed && booking.Status != models.BookingPending {
-		return nil, errors.New("booking cannot be checked in")
-	}
-	if booking.Status == models.BookingPending && booking.ExpiresAt != nil && !booking.ExpiresAt.After(time.Now()) {
-		return nil, errors.New("booking hold has expired")
-	}
-	booking.Status = models.BookingCheckedIn
-	booking.ExpiresAt = nil
-	if err := s.bookings.Update(booking); err != nil {
-		return nil, err
-	}
-	return booking, nil
+
+	var result *models.Booking
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		bookings := s.bookings.WithTx(tx)
+		booking, err := bookings.FindByCodeOrPhone(codeOrPhone)
+		if err != nil {
+			return err
+		}
+		if booking.Status == models.BookingCheckedIn {
+			result = booking
+			return nil
+		}
+		if booking.Status != models.BookingConfirmed && booking.Status != models.BookingPending {
+			return errors.New("booking cannot be checked in")
+		}
+		if booking.Status == models.BookingPending && booking.ExpiresAt != nil && !booking.ExpiresAt.After(time.Now()) {
+			return errors.New("booking hold has expired")
+		}
+		booking.Status = models.BookingCheckedIn
+		booking.ExpiresAt = nil
+		if err := bookings.Update(booking); err != nil {
+			return err
+		}
+		if err := tx.Create(&models.AuditLog{
+			ActorID: actorID, Action: "booking_checked_in", TargetType: "booking", TargetID: fmt.Sprint(booking.ID),
+			Payload: fmt.Sprintf(`{"booking_code":%q,"actor_role":%q}`, booking.BookingCode, actorRole),
+		}).Error; err != nil {
+			return err
+		}
+		result = booking
+		return nil
+	})
+	return result, err
 }
 
 func (s *BookingService) UserBookings(userID uint) ([]models.Booking, error) {

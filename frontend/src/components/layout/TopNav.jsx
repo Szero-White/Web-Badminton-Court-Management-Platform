@@ -25,7 +25,7 @@ export default function TopNav() {
           {!authed && <NavLink to="/login" active={isPath('/login')}>Đăng nhập</NavLink>}
           {role === 'customer' && <NavLink to="/customer" active={isPath('/customer')}>Xem lịch</NavLink>}
           {role === 'staff' && <><NavLink to="/staff" active={location.pathname === '/staff'}>Đặt sân</NavLink><NavLink to="/staff/beverage-counter" active={isPath('/staff/beverage-counter')}>Quầy nước</NavLink><NavLink to="/staff/transactions" active={isPath('/staff/transactions')}>Thu chi</NavLink></>}
-          {role === 'admin' && <><NavLink to="/admin" active={location.pathname === '/admin'}>Tổng quan</NavLink><NavLink to="/admin/booking-desk" active={isPath('/admin/booking')}>Đặt sân</NavLink><NavLink to="/admin/checkin" active={isPath('/admin/checkin')}>Check-in</NavLink></>}
+          {role === 'admin' && <><NavLink to="/admin" active={location.pathname === '/admin'}>Tổng quan</NavLink><NavLink to="/admin/booking-desk" active={isPath('/admin/booking')}>Đặt sân</NavLink><NavLink to="/admin/checkin" active={isPath('/admin/checkin')}>Check-in</NavLink><NavLink to="/admin/activity" active={isPath('/admin/activity')}>Nhật ký</NavLink></>}
           {authed && <><span className="account-chip">{userName} ({ROLE_LABEL[role] || role})</span><button type="button" className="nav-logout-btn" onClick={logout}>Đăng xuất</button></>}
         </nav>
       )}

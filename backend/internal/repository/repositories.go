@@ -11,6 +11,7 @@ type Repositories struct {
 	Drinks       *BeverageRepository
 	Transactions *TransactionRepository
 	PriceRules   *PriceRuleRepository
+	Activity     *ActivityRepository
 }
 
 func New(db *gorm.DB) *Repositories {
@@ -23,5 +24,6 @@ func New(db *gorm.DB) *Repositories {
 		Drinks:       &BeverageRepository{db: db},
 		Transactions: &TransactionRepository{db: db},
 		PriceRules:   &PriceRuleRepository{db: db},
+		Activity:     &ActivityRepository{db: db},
 	}
 }

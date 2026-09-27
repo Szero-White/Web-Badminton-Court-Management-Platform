@@ -11,7 +11,8 @@ const NAV_ITEMS = [
   { to: '/admin/courts', icon: '🎾', title: 'Quản lý sân', description: 'Giờ hoạt động, giá sân và trạng thái bảo trì.' },
   { to: '/admin/revenue', icon: '💰', title: 'Doanh thu', description: 'Theo dõi doanh thu, lấp đầy và giờ cao điểm.' },
   { to: '/admin/beverages', icon: '🥤', title: 'Kho nước', description: 'Danh mục, giá bán, tồn kho và lịch sử chỉnh sửa.' },
-  { to: '/admin/staff', icon: '👤', title: 'Nhân sự', description: 'Quản lý tài khoản nhân viên và quyền truy cập.' }
+  { to: '/admin/staff', icon: '👤', title: 'Nhân sự', description: 'Quản lý tài khoản nhân viên và quyền truy cập.' },
+  { to: '/admin/activity', icon: '🛡️', title: 'Nhật ký hoạt động', description: 'Tra cứu ai đã thao tác gì, lúc nào và trên dữ liệu nào.' }
 ];
 
 const OPERATIONS = [
