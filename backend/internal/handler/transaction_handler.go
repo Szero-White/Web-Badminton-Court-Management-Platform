@@ -5,6 +5,7 @@ import (
 
 	"badminton-platform/backend/internal/middleware"
 	"badminton-platform/backend/internal/service"
+	"badminton-platform/backend/internal/timeutil"
 	"badminton-platform/backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -77,17 +78,32 @@ func (h *TransactionHandler) GetShiftSummary(c *gin.Context) {
 	if shift == "" {
 		shift = service.GetCurrentShift()
 	}
-	summary, err := h.transactions.ShiftSummary(staffID, shift)
+	day := timeutil.Now()
+	if dayText := c.Query("day"); dayText != "" {
+		parsed, parseErr := timeutil.ParseDate(dayText)
+		if parseErr != nil {
+			response.Error(c, http.StatusBadRequest, "BAD_REQUEST", "invalid day format")
+			return
+		}
+		day = parsed
+	}
+	summary, err := h.transactions.ShiftSummary(staffID, shift, day)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, "SHIFT_SUMMARY_FAILED", err.Error())
 		return
 	}
-	txns, err := h.transactions.ListByShift(staffID, shift)
+	txns, err := h.transactions.ListByShift(staffID, shift, day)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, "LIST_TRANSACTIONS_FAILED", err.Error())
 		return
 	}
+	bookingPayments, err := h.transactions.BookingPaymentsByShift(staffID, shift, day)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "LIST_BOOKING_PAYMENTS_FAILED", err.Error())
+		return
+	}
 	summary["transactions"] = txns
+	summary["booking_payments"] = bookingPayments
 	response.JSON(c, http.StatusOK, summary)
 }
 
@@ -100,7 +116,16 @@ func (h *TransactionHandler) ListTransactions(c *gin.Context) {
 	if shift == "" {
 		shift = service.GetCurrentShift()
 	}
-	txns, err := h.transactions.ListByShift(staffID, shift)
+	day := timeutil.Now()
+	if dayText := c.Query("day"); dayText != "" {
+		parsed, parseErr := timeutil.ParseDate(dayText)
+		if parseErr != nil {
+			response.Error(c, http.StatusBadRequest, "BAD_REQUEST", "invalid day format")
+			return
+		}
+		day = parsed
+	}
+	txns, err := h.transactions.ListByShift(staffID, shift, day)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, "LIST_TRANSACTIONS_FAILED", err.Error())
 		return

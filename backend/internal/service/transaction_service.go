@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"badminton-platform/backend/internal/models"
 	"badminton-platform/backend/internal/repository"
@@ -30,10 +31,11 @@ var validShifts = map[string]struct{}{
 
 type TransactionService struct {
 	transactionRepo *repository.TransactionRepository
+	paymentRepo     *repository.PaymentRepository
 }
 
-func NewTransactionService(transactionRepo *repository.TransactionRepository) *TransactionService {
-	return &TransactionService{transactionRepo: transactionRepo}
+func NewTransactionService(transactionRepo *repository.TransactionRepository, paymentRepo *repository.PaymentRepository) *TransactionService {
+	return &TransactionService{transactionRepo: transactionRepo, paymentRepo: paymentRepo}
 }
 
 // CreateTransaction records a staff-side sale or cash-flow adjustment.
@@ -80,6 +82,7 @@ func (s *TransactionService) CreateTransaction(staffID uint, txnType, descriptio
 		PaymentMethod: paymentMethod,
 		Notes:         strings.TrimSpace(notes),
 		Shift:         shift,
+		BusinessDate:  timeutil.StartOfDay(timeutil.Now()),
 	}
 
 	if err := s.transactionRepo.Create(txn); err != nil {
@@ -88,7 +91,6 @@ func (s *TransactionService) CreateTransaction(staffID uint, txnType, descriptio
 	return txn, nil
 }
 
-// RecordRefund records a refund as a negative transaction amount.
 func (s *TransactionService) RecordRefund(staffID uint, description, notes, shift string, amount int64) (*models.Transaction, error) {
 	if staffID == 0 {
 		return nil, errors.New("staff id is required")
@@ -114,6 +116,7 @@ func (s *TransactionService) RecordRefund(staffID uint, description, notes, shif
 		PaymentMethod: "cash",
 		Notes:         strings.TrimSpace(notes),
 		Shift:         shift,
+		BusinessDate:  timeutil.StartOfDay(timeutil.Now()),
 	}
 
 	if err := s.transactionRepo.Create(refund); err != nil {
@@ -122,15 +125,57 @@ func (s *TransactionService) RecordRefund(staffID uint, description, notes, shif
 	return refund, nil
 }
 
-func (s *TransactionService) ListByShift(staffID uint, shift string) ([]models.Transaction, error) {
-	return s.transactionRepo.ListByStaffAndShift(staffID, shift)
+func (s *TransactionService) ListByShift(staffID uint, shift string, day time.Time) ([]models.Transaction, error) {
+	return s.transactionRepo.ListByStaffShiftAndDate(staffID, shift, day)
 }
 
-func (s *TransactionService) ShiftSummary(staffID uint, shift string) (map[string]interface{}, error) {
-	return s.transactionRepo.SummaryByStaffAndShift(staffID, shift)
+func (s *TransactionService) BookingPaymentsByShift(staffID uint, shift string, day time.Time) ([]models.Payment, error) {
+	return s.paymentRepo.ListByActorShiftAndDate(staffID, shift, day)
 }
 
-// GetCurrentShift maps local time to the operating shift.
+func (s *TransactionService) ShiftSummary(staffID uint, shift string, day time.Time) (map[string]interface{}, error) {
+	beverage, err := s.transactionRepo.SummaryByStaffShiftAndDate(staffID, shift, day)
+	if err != nil {
+		return nil, err
+	}
+	booking, err := s.paymentRepo.SummaryByActorShiftAndDate(staffID, shift, day)
+	if err != nil {
+		return nil, err
+	}
+
+	refundOut := nonNegative(-beverage.RefundSum) + booking.Refund
+	stockInCost := nonNegative(-beverage.StockInCostSum)
+	ownerWithdraw := nonNegative(-beverage.OwnerWithdrawSum)
+	beverageIncome := beverage.SalesIncome
+	bookingIncome := booking.Income
+	grossIncome := beverageIncome + bookingIncome
+	cashIncome := beverage.CashSales + booking.Cash
+	transferIncome := beverage.TransferSales + booking.Transfer
+	netRevenue := grossIncome - refundOut - stockInCost
+	cashBalance := cashIncome - refundOut - stockInCost - ownerWithdraw
+
+	return map[string]interface{}{
+		"business_date":     day.Format(timeutil.DateLayout),
+		"shift":             shift,
+		"booking_income":    bookingIncome,
+		"beverage_income":   beverageIncome,
+		"income":            grossIncome,
+		"cash":              cashIncome,
+		"transfer":          transferIncome,
+		"booking_cash":      booking.Cash,
+		"booking_transfer":  booking.Transfer,
+		"beverage_cash":     beverage.CashSales,
+		"beverage_transfer": beverage.TransferSales,
+		"refund":            refundOut,
+		"booking_refund":    booking.Refund,
+		"stock_in_cost":     stockInCost,
+		"owner_withdraw":    ownerWithdraw,
+		"net_revenue":       netRevenue,
+		"cash_balance":      cashBalance,
+		"total":             netRevenue,
+	}, nil
+}
+
 func GetCurrentShift() string {
 	hour := timeutil.Now().Hour()
 	if hour >= 6 && hour < 12 {
@@ -145,6 +190,13 @@ func GetCurrentShift() string {
 func absoluteInt64(value int64) int64 {
 	if value < 0 {
 		return -value
+	}
+	return value
+}
+
+func nonNegative(value int64) int64 {
+	if value < 0 {
+		return 0
 	}
 	return value
 }

@@ -37,10 +37,10 @@ func main() {
 	repos := repository.New(database)
 	authSvc := service.NewAuthService(repos.Users, cfg)
 	beverageSvc := service.NewBeverageService(repos.Drinks)
-	courtSvc := service.NewCourtService(repos.Courts, repos.Slots)
-	bookingSvc := service.NewBookingService(database, cfg, repos.Users, repos.Slots, repos.Bookings, repos.Payments, redisClient)
-	dashboardSvc := service.NewDashboardService(repos.Bookings, repos.Payments)
-	transactionSvc := service.NewTransactionService(repos.Transactions)
+	courtSvc := service.NewCourtService(repos.Courts, repos.Slots, repos.PriceRules)
+	bookingSvc := service.NewBookingService(database, cfg, repos.Users, repos.Slots, repos.Bookings, repos.Payments, repos.PriceRules, redisClient)
+	dashboardSvc := service.NewDashboardService(repos.Bookings, repos.Payments, repos.Transactions)
+	transactionSvc := service.NewTransactionService(repos.Transactions, repos.Payments)
 
 	handlers := server.Handlers{
 		Auth: handler.NewAuthHandler(authSvc), Admin: handler.NewAdminHandler(authSvc, beverageSvc), StaffBeverage: handler.NewStaffBeverageHandler(beverageSvc),

@@ -7,6 +7,21 @@ import { staffApi } from '../services/api';
 import { getPreviousShift, getShiftName, shiftLabel } from '../utils/shift';
 import './StaffTransactionPage.css';
 import './StaffTransactionTable.css';
+import useAppNotice from '../hooks/useAppNotice';
+
+
+function localDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function previousShiftBusinessDay(currentShift) {
+  const date = new Date();
+  if (currentShift === 'morning') date.setDate(date.getDate() - 1);
+  return localDateString(date);
+}
 
 function toPositiveAmount(value) {
   const parsed = Number(value);
@@ -16,6 +31,8 @@ function toPositiveAmount(value) {
 export default function StaffTransactionPage() {
   const currentShift = getShiftName();
   const previousShift = getPreviousShift(currentShift);
+  const businessDay = localDateString();
+  const previousBusinessDay = previousShiftBusinessDay(currentShift);
   const [saleForm, setSaleForm] = useState({ description: '', amount: '', paymentMethod: 'cash', notes: '', shift: currentShift });
   const [refundForm, setRefundForm] = useState({ description: '', amount: '', notes: '', shift: currentShift });
   const [ownerWithdrawForm, setOwnerWithdrawForm] = useState({ amount: '', notes: '', shift: currentShift });
@@ -23,27 +40,35 @@ export default function StaffTransactionPage() {
   const [summary, setSummary] = useState(null);
   const [previousSummary, setPreviousSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const { notice, setNotice, clearNotice } = useAppNotice();
+  const error = notice?.tone === 'error' ? notice.text : '';
+  const successMessage = notice?.tone === 'success' ? notice.text : '';
+  const setError = (value) => {
+    if (!value) { clearNotice(); return; }
+    setNotice({ text: value, tone: 'error' });
+  };
+  const setSuccessMessage = (value) => {
+    if (!value) { clearNotice(); return; }
+    setNotice({ text: value, tone: 'success' });
+  };
 
   useEffect(() => {
     loadShiftData();
     const intervalId = window.setInterval(loadShiftData, 30_000);
     return () => window.clearInterval(intervalId);
-  }, [currentShift]);
+  }, [currentShift, businessDay, previousBusinessDay]);
 
   async function loadShiftData() {
     try {
       setLoading(true);
       const [currentResponse, previousResponse] = await Promise.all([
-        staffApi.getShiftSummary(currentShift),
-        staffApi.getShiftSummary(previousShift)
+        staffApi.getShiftSummary(currentShift, businessDay),
+        staffApi.getShiftSummary(previousShift, previousBusinessDay)
       ]);
       const current = currentResponse?.data?.data || {};
       setSummary(current);
       setPreviousSummary(previousResponse?.data?.data || {});
       setTransactions(current.transactions || []);
-      setError('');
     } catch (requestError) {
       setError(requestError?.response?.data?.error?.message || 'Không tải được dữ liệu ca.');
     } finally {
@@ -53,7 +78,6 @@ export default function StaffTransactionPage() {
 
   function showSuccess(message) {
     setSuccessMessage(message);
-    window.setTimeout(() => setSuccessMessage(''), 3000);
   }
 
   async function handleSaleSubmit(event) {
@@ -127,10 +151,10 @@ export default function StaffTransactionPage() {
   return (
     <div className="staff-transaction-page">
       <div className="transaction-header">
-        <h1>💰 {localStorage.getItem('user_name') || 'Nhân viên'} - Sổ Thu Chi ({shiftLabel(currentShift)})</h1>
+        <h1>💰 {localStorage.getItem('user_name') || 'Nhân viên'} - Sổ Thu Chi ({shiftLabel(currentShift)} · {new Date(`${businessDay}T00:00:00`).toLocaleDateString('vi-VN')})</h1>
         <PageBackButton to="/staff" label="Quay lại Đặt sân" />
       </div>
-      <AppToast message={error || successMessage} tone={error ? 'error' : 'success'} />
+      <AppToast message={notice} onDismiss={clearNotice} />
       <div className="transaction-grid">
         <TransactionForms
           saleForm={saleForm}

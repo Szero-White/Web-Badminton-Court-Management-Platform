@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"badminton-platform/backend/internal/models"
+	"badminton-platform/backend/internal/timeutil"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -195,6 +196,7 @@ func (r *BeverageRepository) Sell(staffID, beverageID uint, qty int, paymentMeth
 			PaymentMethod: paymentMethod,
 			Notes:         notes,
 			Shift:         shift,
+			BusinessDate:  timeutil.StartOfDay(timeutil.Now()),
 		}
 		if err := tx.Create(&transaction).Error; err != nil {
 			return err
@@ -241,6 +243,7 @@ func (r *BeverageRepository) Restock(staffID, beverageID uint, qty int, costAmou
 			PaymentMethod: paymentMethod,
 			Notes:         notes,
 			Shift:         shift,
+			BusinessDate:  timeutil.StartOfDay(timeutil.Now()),
 		}
 		if err := tx.Create(&transaction).Error; err != nil {
 			return err

@@ -11,6 +11,7 @@ type Transaction struct {
 	PaymentMethod string    `gorm:"size:30;index" json:"payment_method"`
 	Notes         string    `gorm:"type:text" json:"notes"`
 	Shift         string    `gorm:"size:50;index" json:"shift"`
+	BusinessDate  time.Time `gorm:"type:date;index" json:"business_date"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }

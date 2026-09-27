@@ -1,2 +1,4 @@
 import api from './httpClient';
-export const dashboardApi = { summary: () => api.get('/admin/dashboard/summary') };
+export const dashboardApi = {
+  summary: ({ from, to } = {}) => api.get('/admin/dashboard/summary', { params: { from, to } })
+};

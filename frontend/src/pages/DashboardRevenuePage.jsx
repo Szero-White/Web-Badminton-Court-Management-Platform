@@ -1,218 +1,184 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AppToast from '../components/feedback/AppToast';
 import PageBackButton from '../components/navigation/PageBackButton';
-import { bookingApi, adminApi } from '../services/api';
 import AppDatePicker from '../components/ui/AppDatePicker';
+import { adminApi, dashboardApi } from '../services/api';
+import useAppNotice from '../hooks/useAppNotice';
+import './DashboardRevenuePage.css';
 
-function todayString() {
+function localDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function startOfWeek(date) {
+  const value = new Date(date);
+  const weekday = value.getDay() || 7;
+  value.setDate(value.getDate() - weekday + 1);
+  return value;
+}
+
+function presetRange(preset) {
   const now = new Date();
-  const month = `${now.getMonth() + 1}`.padStart(2, '0');
-  const day = `${now.getDate()}`.padStart(2, '0');
-  return `${now.getFullYear()}-${month}-${day}`;
+  if (preset === 'week') return { from: localDateString(startOfWeek(now)), to: localDateString(now) };
+  if (preset === 'month') return { from: localDateString(new Date(now.getFullYear(), now.getMonth(), 1)), to: localDateString(now) };
+  if (preset === 'year') return { from: localDateString(new Date(now.getFullYear(), 0, 1)), to: localDateString(now) };
+  return { from: localDateString(now), to: localDateString(now) };
+}
+
+function money(value) {
+  return Number(value || 0).toLocaleString('vi-VN');
 }
 
 export default function DashboardRevenuePage() {
-  const [day, setDay] = useState(() => localStorage.getItem('last_booking_day') || todayString());
-  const [slots, setSlots] = useState([]);
+  const [preset, setPreset] = useState('day');
+  const initialRange = presetRange('day');
+  const [from, setFrom] = useState(initialRange.from);
+  const [to, setTo] = useState(initialRange.to);
+  const [summary, setSummary] = useState(null);
   const [beverages, setBeverages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('Chọn ngày để xem doanh thu.');
+  const { notice: message, setNotice: setMessage, clearNotice } = useAppNotice();
+  const [tone, setTone] = useState('success');
+
+  function applyPreset(nextPreset) {
+    setPreset(nextPreset);
+    if (nextPreset !== 'custom') {
+      const range = presetRange(nextPreset);
+      setFrom(range.from);
+      setTo(range.to);
+    }
+  }
 
   async function loadData() {
     setLoading(true);
     try {
-      const [slotsRes, beveragesRes] = await Promise.all([
-        bookingApi.getDaySlots(day),
+      const [summaryResponse, beverageResponse] = await Promise.all([
+        dashboardApi.summary({ from, to }),
         adminApi.listBeverages()
       ]);
-      setSlots(slotsRes.data?.data || []);
-      setBeverages(beveragesRes.data?.data || []);
-      setMessage(`Dữ liệu ngày ${new Date(`${day}T00:00:00`).toLocaleDateString('vi-VN')} được tải thành công.`);
+      setSummary(summaryResponse?.data?.data || null);
+      setBeverages(beverageResponse?.data?.data || []);
+      setMessage('');
     } catch (error) {
-      setMessage(error?.response?.data?.error?.message || 'Không thể tải dữ liệu.');
+      setTone('error');
+      setMessage(error?.response?.data?.error?.message || 'Không tải được báo cáo vận hành.');
     } finally {
       setLoading(false);
     }
   }
 
-  // Tính toán doanh thu
-  const statistics = useMemo(() => {
-    // Doanh thu từ sân cầu lông
-    const bookedSlots = slots.filter((s) => s.booked);
-    const courtRevenue = bookedSlots.reduce((sum, s) => sum + s.price, 0);
-    const courtCount = bookedSlots.length;
-
-    // Tính toán tồn kho và giá trị
-    const beverageValue = beverages.reduce((sum, b) => sum + b.price * b.stock, 0);
-
-    // Tổng doanh thu tiềm năng (nếu bán hết nước)
-    const totalRevenuePotential = courtRevenue + beverageValue;
-
-    return {
-      courtRevenue,
-      courtCount,
-      beverageValue,
-      totalRevenue: courtRevenue,
-      totalSlots: slots.length,
-      occupancyRate: slots.length > 0 ? ((courtCount / slots.length) * 100).toFixed(1) : 0,
-      beverageCount: beverages.length,
-      totalBeverageStock: beverages.reduce((sum, b) => sum + b.stock, 0)
-    };
-  }, [slots, beverages]);
-
   useEffect(() => {
     loadData();
+  }, [from, to]);
 
-    const timer = setInterval(() => {
-      loadData();
-    }, 15000);
+  const inventory = useMemo(() => ({
+    quantity: beverages.reduce((sum, item) => sum + Number(item.stock || 0), 0),
+    value: beverages.reduce((sum, item) => sum + Number(item.stock || 0) * Number(item.price || 0), 0)
+  }), [beverages]);
 
-    return () => clearInterval(timer);
-  }, [day]);
+  const cards = summary ? [
+    ['Tổng thu', summary.gross_income, 'Tiền sân + bán nước'],
+    ['Thu tiền sân', summary.booking_income, `Giá trị booking: ${money(summary.booked_value)} đ`],
+    ['Bán nước', summary.beverage_income, 'Doanh thu quầy nước'],
+    ['Doanh thu ròng', summary.net_revenue, 'Sau hoàn tiền và nhập hàng'],
+    ['Tiền mặt', summary.cash_income, `Số dư quỹ: ${money(summary.cash_balance)} đ`],
+    ['Chuyển khoản', summary.transfer_income, 'Thu qua chuyển khoản'],
+    ['Còn phải thu', summary.outstanding_due, 'Booking chưa thanh toán đủ'],
+    ['Chi phí nhập hàng', -Number(summary.stock_in_cost || 0), `Chủ đã rút: ${money(summary.owner_withdraw)} đ`]
+  ] : [];
 
   return (
-    <section className="panel customer">
-      <div className="panel-header" style={{ alignItems: 'center' }}>
-        <div style={{ flex: 1, minWidth: 280 }}>
-          <h2>📊 Thống Kê Doanh Thu</h2>
-          <p>Xem doanh thu từ sân cầu lông & nước uống theo ngày.</p>
-        </div>
-        <div className="filters" style={{ margin: 0 }}>
-          <AppDatePicker value={day} onChange={setDay} ariaLabel="Chọn ngày thống kê" />
-          <button onClick={loadData} disabled={loading}>
-            {loading ? 'Đang tải...' : 'Xem'}
-          </button>
+    <section className="operations-report-page">
+      <header className="operations-report-header">
+        <div>
+          <span className="operations-report-eyebrow">Báo cáo vận hành</span>
+          <h1>Doanh thu & hiệu suất sân</h1>
+          <p>Theo dõi tiền sân, bán nước, công nợ và hiệu suất sử dụng trong cùng một báo cáo.</p>
         </div>
         <PageBackButton to="/admin" label="Quay lại Tổng quan" />
-      </div>
+      </header>
 
-      <AppToast message={message} />
-
-      {/* Thống kê tổng quan */}
-      <div className="metrics-grid">
-        <div className="metric-card">
-          <label>🎾 Sân Đã Đặt</label>
-          <h3>{statistics.courtCount} / {statistics.totalSlots}</h3>
-          <small>{statistics.occupancyRate}% lấp đầy</small>
+      <div className="operations-report-toolbar">
+        <div className="operations-report-presets" role="group" aria-label="Khoảng báo cáo nhanh">
+          {[
+            ['day', 'Hôm nay'],
+            ['week', 'Tuần này'],
+            ['month', 'Tháng này'],
+            ['year', 'Năm nay'],
+            ['custom', 'Tùy chọn']
+          ].map(([value, label]) => (
+            <button key={value} type="button" className={preset === value ? 'is-active' : ''} onClick={() => applyPreset(value)}>{label}</button>
+          ))}
         </div>
-
-        <div className="metric-card">
-          <label>💰 Doanh Thu Sân</label>
-          <h3>{statistics.courtRevenue.toLocaleString('vi-VN')}</h3>
-          <small>VND</small>
-        </div>
-
-        <div className="metric-card">
-          <label>🥤 Tồn Kho Nước</label>
-          <h3>{statistics.totalBeverageStock} sản phẩm</h3>
-          <small>{statistics.beverageCount} loại</small>
-        </div>
-
-        <div className="metric-card">
-          <label>📦 Giá Trị Tồn Kho</label>
-          <h3>{statistics.beverageValue.toLocaleString('vi-VN')}</h3>
-          <small>VND (nếu bán hết)</small>
+        <div className="operations-report-dates">
+          <label>Từ ngày<AppDatePicker value={from} onChange={(value) => { setPreset('custom'); setFrom(value); }} ariaLabel="Ngày bắt đầu báo cáo" /></label>
+          <label>Đến ngày<AppDatePicker value={to} onChange={(value) => { setPreset('custom'); setTo(value); }} ariaLabel="Ngày kết thúc báo cáo" /></label>
+          <button type="button" onClick={loadData} disabled={loading}>{loading ? 'Đang tải…' : 'Làm mới'}</button>
         </div>
       </div>
 
-      {/* Chi tiết đặt sân */}
-      <div style={{ marginTop: '20px', padding: '16px', background: '#f8f9fa', borderRadius: '12px' }}>
-        <h3>🎾 Chi Tiết Đặt Sân ({statistics.courtCount} booking)</h3>
-        {slots.filter((s) => s.booked).length > 0 ? (
-          <table style={{ width: '100%', textAlign: 'left', marginTop: '12px', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #ddd' }}>
-                <th>Sân</th>
-                <th>Giờ</th>
-                <th>Khách đặt</th>
-                <th>Số điện thoại</th>
-                <th>Ghi chú</th>
-                <th>Mã Booking</th>
-                <th>Giá (VND)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {slots
-                .filter((s) => s.booked)
-                .map((slot) => (
-                  <tr key={slot.id} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '8px' }}>{slot.court_name}</td>
-                    <td style={{ padding: '8px' }}>
-                        {new Date(slot.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(slot.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td style={{ padding: '8px' }}>
-                      <strong>{slot.customer_name || 'Chưa có tên'}</strong>
-                    </td>
-                    <td style={{ padding: '8px' }}>{slot.customer_phone || 'Chưa có SĐT'}</td>
-                    <td style={{ padding: '8px' }}>{slot.booking_note || '-'}</td>
-                    <td style={{ padding: '8px' }}>
-                      <strong>{slot.booking_code}</strong>
-                    </td>
-                    <td style={{ padding: '8px' }}>{slot.price?.toLocaleString('vi-VN')}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        ) : (
-          <p style={{ padding: '12px', color: '#999' }}>Không có booking nào ngày này.</p>
-        )}
-      </div>
+      <AppToast message={message} tone={tone} onDismiss={clearNotice} />
 
-      {/* Chiết kế tồn kho nước */}
-      <div style={{ marginTop: '20px', padding: '16px', background: '#f8f9fa', borderRadius: '12px' }}>
-        <h3>🥤 Tồn Kho Nước ({statistics.beverageCount} loại)</h3>
-        {beverages.length > 0 ? (
-          <table style={{ width: '100%', textAlign: 'left', marginTop: '12px', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #ddd' }}>
-                <th>Tên Nước</th>
-                <th>Giá (VND)</th>
-                <th>Tồn Kho</th>
-                <th>Đơn Vị</th>
-                <th>Giá Trị (VND)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {beverages.map((drink) => (
-                <tr key={drink.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '8px' }}>{drink.name}</td>
-                  <td style={{ padding: '8px' }}>{drink.price?.toLocaleString('vi-VN')}</td>
-                  <td style={{ padding: '8px' }}>{drink.stock}</td>
-                  <td style={{ padding: '8px' }}>{drink.unit || 'chai'}</td>
-                  <td style={{ padding: '8px' }}>
-                    <strong>{(drink.price * drink.stock).toLocaleString('vi-VN')}</strong>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p style={{ padding: '12px', color: '#999' }}>Chưa có nước uống nào.</p>
-        )}
-      </div>
-
-      {/* Tổng hợp */}
-      <div style={{ marginTop: '20px', padding: '16px', background: '#e8f5e9', borderRadius: '12px' }}>
-        <h3>📈 Tóm Tắt Ngày {day}</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-          <div>
-            <strong>💰 Doanh Thu Thực Tế</strong>
-            <p style={{ fontSize: '18px', color: '#2e7d32' }}>
-              {statistics.courtRevenue.toLocaleString('vi-VN')} VND
-            </p>
+      {summary ? (
+        <>
+          <div className="operations-report-metrics">
+            {cards.map(([label, value, detail]) => (
+              <article key={label} className="operations-report-card">
+                <span>{label}</span>
+                <strong className={Number(value) < 0 ? 'is-negative' : ''}>{Number(value) < 0 ? '-' : ''}{money(Math.abs(Number(value || 0)))} đ</strong>
+                <small>{detail}</small>
+              </article>
+            ))}
           </div>
-          <div>
-            <strong>💎 Giá Trị Tồn Kho</strong>
-            <p style={{ fontSize: '18px', color: '#1976d2' }}>
-              {statistics.beverageValue.toLocaleString('vi-VN')} VND
-            </p>
+
+          <div className="operations-report-kpis">
+            <article><span>Tỷ lệ lấp đầy</span><strong>{Number(summary.occupancy_rate || 0).toFixed(1)}%</strong><small>{summary.booked_slots || 0} / {summary.total_slots || 0} khung giờ</small></article>
+            <article><span>Slot đã đặt</span><strong>{summary.booked_slots || 0}</strong><small>{summary.canceled_slots || 0} slot hủy/no-show</small></article>
+            <article><span>Tồn kho nước</span><strong>{inventory.quantity}</strong><small>{money(inventory.value)} đ giá trị bán hiện tại</small></article>
+            <article><span>Hoàn tiền</span><strong>{money(summary.refunds)} đ</strong><small>Booking + giao dịch quầy</small></article>
           </div>
-          <div>
-            <strong>📊 Tỉ Lệ Lấp Đầy Sân</strong>
-            <p style={{ fontSize: '18px', color: '#f57c00' }}>{statistics.occupancyRate}%</p>
+
+          <div className="operations-report-grid">
+            <section className="operations-report-section">
+              <div className="operations-report-section-title">
+                <div><span>Hiệu suất theo sân</span><h2>Doanh thu đặt sân</h2></div>
+              </div>
+              <div className="operations-report-table-wrap">
+                <table>
+                  <thead><tr><th>Sân</th><th>Slot đã đặt</th><th>Giá trị booking</th><th>Còn phải thu</th></tr></thead>
+                  <tbody>
+                    {(summary.court_breakdown || []).map((court) => (
+                      <tr key={court.court_id}>
+                        <td><strong>{court.court_name}</strong></td>
+                        <td>{court.booked_slots}</td>
+                        <td>{money(court.booked_value)} đ</td>
+                        <td className={Number(court.outstanding_due) > 0 ? 'is-warning' : ''}>{money(court.outstanding_due)} đ</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className="operations-report-section">
+              <div className="operations-report-section-title">
+                <div><span>Đối soát</span><h2>Dòng tiền</h2></div>
+              </div>
+              <dl className="operations-report-ledger">
+                <div><dt>Tổng thu</dt><dd>{money(summary.gross_income)} đ</dd></div>
+                <div><dt>Hoàn tiền</dt><dd>-{money(summary.refunds)} đ</dd></div>
+                <div><dt>Nhập hàng</dt><dd>-{money(summary.stock_in_cost)} đ</dd></div>
+                <div><dt>Doanh thu ròng</dt><dd><strong>{money(summary.net_revenue)} đ</strong></dd></div>
+                <div><dt>Chủ rút tiền</dt><dd>-{money(summary.owner_withdraw)} đ</dd></div>
+                <div className="is-total"><dt>Số dư tiền mặt</dt><dd>{money(summary.cash_balance)} đ</dd></div>
+              </dl>
+            </section>
           </div>
-        </div>
-      </div>
+        </>
+      ) : loading ? <div className="operations-report-loading">Đang tổng hợp báo cáo…</div> : null}
     </section>
   );
 }
