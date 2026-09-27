@@ -37,8 +37,8 @@ The customer portal is read-only for court operations. Customers can authenticat
 | POST | `/staff/beverages/restock` | Restock beverage |
 | POST | `/staff/transactions` | Record shift transaction |
 | POST | `/staff/transactions/refund` | Record refund |
-| GET | `/staff/shift-summary` | Shift totals |
-| GET | `/staff/transactions` | Shift transactions |
+| GET | `/staff/shift-summary?shift=morning&day=YYYY-MM-DD` | Date-scoped shift totals including booking payments and counter sales |
+| GET | `/staff/transactions?shift=morning&day=YYYY-MM-DD` | Date-scoped counter transactions |
 
 ## Admin
 
@@ -55,6 +55,14 @@ The customer portal is read-only for court operations. Customers can authenticat
 | GET | `/admin/beverages/:beverage_id/history` | Inventory audit history |
 | GET/POST | `/admin/courts` | List/create courts |
 | PUT | `/admin/courts/:court_id` | Update court |
-| GET | `/admin/dashboard/summary` | Revenue/booking dashboard |
+| GET | `/admin/dashboard/summary?from=YYYY-MM-DD&to=YYYY-MM-DD` | Operations report for day/week/month/year/custom ranges |
 
 Operational endpoints: `GET /health` (process liveness) and `GET /ready` (database plus required Redis readiness).
+
+## Booking group reschedule (Staff/Admin)
+
+`PUT /api/staff/bookings/:booking_id/group` and `PUT /api/admin/bookings/:booking_id/group`
+
+Updates an active booking group atomically. The payload includes the complete target `time_slot_ids` plus editable customer, payment, note, and display-color fields. The backend validates that target slots are continuous, on one court/day, not in the past, and not occupied by another active booking. Slot prices are refreshed through the pricing engine before commit. If any validation fails, the transaction is rolled back and the original booking remains unchanged.
+
+When the new total is lower than the amount already collected, `payment_adjustment_reason` is required. Schedule changes are recorded in the audit log as `booking_group_rescheduled`.

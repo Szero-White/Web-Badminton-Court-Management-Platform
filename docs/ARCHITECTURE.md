@@ -74,3 +74,19 @@ Court scheduling follows a clear role boundary:
 2. Staff and Admin use the same booking-desk interaction pattern and shared schedule-cell presentation. They can create bookings for walk-in or monthly customers and can open booked cells for operational actions.
 3. Customer accounts cannot create booking holds or cancel bookings through mutation endpoints. Booking creation/cancellation is performed by Staff/Admin.
 4. The public schedule may distinguish walk-in vs monthly occupancy for visual planning without exposing personally identifiable booking data.
+
+
+## Shift accounting and reporting
+
+Operational accounting is date-scoped and ledger-based:
+
+1. Every staff transaction records both the operating shift and a canonical `business_date` in the Asia/Ho_Chi_Minh timezone.
+2. Booking payments also record the actor, role, shift, and business date so court revenue can be reconciled with counter revenue.
+3. Shift closing queries by `staff_id + shift + business_date`; the same named shift on another day is never mixed into the current close.
+4. Shift summaries combine booking collections and beverage/counter transactions while preserving the underlying ledgers separately.
+5. Admin reporting accepts an explicit date range and aggregates booking collections, beverage sales, refunds, stock-in costs, owner withdrawals, outstanding booking balances, occupancy, and per-court booked value.
+6. Historical booking prices remain snapshot values; reporting does not reprice bookings from the current pricing rules.
+
+## Booking reschedule transaction
+
+Staff and Admin share the same booking edit workflow. Rescheduling is not implemented as independent per-slot updates. `BookingService.UpdateBookingGroup` locks the active booking group and selected target slots, validates continuity/conflicts, recalculates current prices, reconciles the group payment allocation, and commits the schedule/customer/payment/display changes in one database transaction. This prevents partial moves and keeps the schedule grid, pricing engine, payment ledger, and audit trail consistent.
